@@ -105,3 +105,6 @@ dist
 
 # Typescript types
 dist-types
+
+# Typescript build
+build
