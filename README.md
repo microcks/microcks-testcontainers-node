@@ -1,6 +1,6 @@
 # Microcks Testcontainers Node
 
-Node/TypeScript library for Testcontainers that enables embedding Microcks into your Go unit tests with lightweight, throwaway instance thanks to containers
+Node/TypeScript library for Testcontainers that enables embedding Microcks into your unit tests with lightweight, throwaway instance thanks to containers
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/microcks/microcks-testcontainers-node/build-verify.yml?logo=github&style=for-the-badge)](https://github.com/microcks/microcks-testcontainers-node/actions)
 [![Version](https://img.shields.io/npm/v/@microcks/microcks-testcontainers?color=blue&style=for-the-badge)]((https://www.npmjs.com/package/@microcks/microcks-testcontainers))
