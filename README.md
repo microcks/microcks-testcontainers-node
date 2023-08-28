@@ -26,7 +26,7 @@ npm install @microcks/microcks-testcontainers
 You just have to specify the container image you'd like to use. This library requires a Microcks `uber` distribution (with no MongoDB dependency).
 
 ```ts
-import { MicrocksContainer } from "@microcks-testcontainers";
+import { MicrocksContainer } from "@microcks/microcks-testcontainers";
 
 const container = await new MicrocksContainer().start();
 ```
@@ -67,7 +67,7 @@ If you want to ensure that your application under test is conformant to an OpenA
 you can launch a Microcks contract/conformance test using the local server port you're actually running:
 
 ```ts
-import { MicrocksContainer, TestRequest, TestRunnerType } from "@microcks-testcontainers";
+import { MicrocksContainer, TestRequest, TestRunnerType } from "@microcks/microcks-testcontainers";
 
 var testRequest: TestRequest = {
     serviceId: "API Pastries:0.0.1",
