@@ -2,14 +2,22 @@
   "name": "@microcks/microcks-testcontainers",
   "version": "0.1.0",
   "author": "Laurent Broudoux <laurent@microcks.io>",
+  "description": "Node/TypeScript library for Testcontainers that enables embedding Microcks into your unit tests with lightweight, throwaway instance thanks to containers",
+  "bugs": {
+    "url": "https://github.com/microcks/microcks-testcontainers-node/issues"
+  },
+  "homepage": "https://github.com/microcks/microcks-testcontainers-node#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/microcks/microcks-testcontainers-node.git"
+    "url": "git+https://github.com/microcks/microcks-testcontainers-node.git"
   },
   "license": "Apache-2.0",
+  "main": "src/index.ts",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "prebuild": "node -p \"'export const LIB_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/version.ts",
-    "prepack": "shx cp ./README.md . && shx cp ./LICENSE .",
     "build": "tsc --project tsconfig.build.json",
     "test": "cross-env DEBUG=testcontainers* jest"
   },
