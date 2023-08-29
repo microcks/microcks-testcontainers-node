@@ -98,10 +98,11 @@ describe("MicrocksContainer", () => {
     expect(testResult.testCaseResults.length).toBe(3);
     expect(testResult.testCaseResults[0].testStepResults[0].message).toBe("");
 
-    // Now stop the containers.
+    // Now stop the containers and the network.
     await container.stop();
     await badImpl.stop();
     await goodImpl.stop();
+    await network.stop();
   });
   // }
 });  
