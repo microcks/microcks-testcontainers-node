@@ -13,6 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export { MicrocksContainer, StartedMicrocksContainer,
-    TestRequest, SecretRef, TestRunnerType,
-    TestResult, TestCaseResult, TestStepResult } from "./microcks-container";
+export * from "./microcks-container";

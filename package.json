@@ -1,6 +1,6 @@
 {
   "name": "@microcks/microcks-testcontainers",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "Laurent Broudoux <laurent@microcks.io>",
   "description": "Node/TypeScript library for Testcontainers that enables embedding Microcks into your unit tests with lightweight, throwaway instance thanks to containers",
   "bugs": {
@@ -12,7 +12,7 @@
     "url": "git+https://github.com/microcks/microcks-testcontainers-node.git"
   },
   "license": "Apache-2.0",
-  "main": "src/index.ts",
+  "main": "build/index.js",
   "publishConfig": {
     "access": "public"
   },
