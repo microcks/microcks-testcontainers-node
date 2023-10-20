@@ -26,9 +26,10 @@ describe("MicrocksContainer", () => {
   // start and mock {
   it("should start, load artifacts and expose mock", async () => {
     // Start container and load artifacts.
-    const container = await new MicrocksContainer().start();
-    await container.importAsMainArtifact(path.resolve(resourcesDir, "apipastries-openapi.yaml"));
-    await container.importAsSecondaryArtifact(path.resolve(resourcesDir, "apipastries-postman-collection.json"));
+    const container = await new MicrocksContainer()
+      .withMainArtifacts([path.resolve(resourcesDir, "apipastries-openapi.yaml")])
+      .withSecondaryArtifacts([path.resolve(resourcesDir, "apipastries-postman-collection.json")])
+      .start();
     
     // Get base Url for API Pastries / 0.0.1
     var pastriesUrl = container.getRestMockEndpoint("API Pastries", "0.0.1");

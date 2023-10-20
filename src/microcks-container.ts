@@ -21,16 +21,37 @@ const HTTP_PORT = 8080;
 const GRPC_PORT = 9090;
 
 export class MicrocksContainer extends GenericContainer {
+  private mainArtifacts: string[] = [];
+  private secondaryArtifacts: string[] = [];
 
   constructor(image = "quay.io/microcks/microcks-uber:1.8.0") {
     super(image);
+  }
+
+  public withMainArtifacts(artifacts: string[]): this {
+    this.mainArtifacts = this.mainArtifacts.concat(artifacts);
+    return this;
+  }
+
+  public withSecondaryArtifacts(artifacts: string[]): this {
+    this.secondaryArtifacts = this.secondaryArtifacts.concat(artifacts);
+    return this;
   }
 
   public override async start(): Promise<StartedMicrocksContainer> {
     this.withExposedPorts(...(this.hasExposedPorts ? this.exposedPorts : [HTTP_PORT, GRPC_PORT]))
         .withWaitStrategy(Wait.forLogMessage(/.*Started MicrocksApplication.*/, 1));
 
-    return new StartedMicrocksContainer(await super.start());  
+    let startedContainer = new StartedMicrocksContainer(await super.start());
+    // Import artifacts declared in configuration. 
+    for (let i=0; i<this.mainArtifacts.length; i++) {
+      await startedContainer.importAsMainArtifact(this.mainArtifacts[i]);
+    }
+    for (let i=0; i<this.secondaryArtifacts.length; i++) {
+      await startedContainer.importAsSecondaryArtifact(this.secondaryArtifacts[i]);
+    }
+
+    return startedContainer;
   }
 }
 
