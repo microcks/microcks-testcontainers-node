@@ -22,7 +22,7 @@ const GRPC_PORT = 9090;
 
 export class MicrocksContainer extends GenericContainer {
 
-  constructor(image = "quay.io/microcks/microcks-uber:nightly") {
+  constructor(image = "quay.io/microcks/microcks-uber:1.8.0") {
     super(image);
   }
 
