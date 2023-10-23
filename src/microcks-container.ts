@@ -163,9 +163,10 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
   }
 
   /**
-   * @returns The exposed mock endpoint for a gRPC API.
+   * Get the exposed mock endpoint for a gRPC API.
+   * @returns A usable endpoint to interact with Microcks mocks
    */
-  public getGrpcQLMockEndpoint(): string {
+  public getGrpcMockEndpoint(): string {
     return `grpc://${this.getHost()}:${this.grpcPort}`;
   }
 
