@@ -31,6 +31,19 @@ describe("MicrocksContainer", () => {
       .withSecondaryArtifacts([path.resolve(resourcesDir, "apipastries-postman-collection.json")])
       .start();
     
+    // Test mock endpoints relative methods.
+    let baseWsUrl = container.getSoapMockEndpoint("Pastries Service", "1.0");
+    expect(container.getHttpEndpoint() + "/soap/Pastries Service/1.0").toBe(baseWsUrl);
+
+    let baseApiUrl = container.getRestMockEndpoint("API Pastries", "0.0.1");
+    expect(container.getHttpEndpoint() + "/rest/API Pastries/0.0.1").toBe(baseApiUrl);
+
+    let baseGraphUrl = container.getGraphQLMockEndpoint("Pastries Graph", "1");
+    expect(container.getHttpEndpoint() + "/graphql/Pastries Graph/1").toBe(baseGraphUrl);
+
+    let baseGrpcUrl = container.getGrpcMockEndpoint();
+    expect("grpc://" + container.getHost() + ":" + container.getMappedPort(9090)).toBe(baseGrpcUrl);
+
     // Get base Url for API Pastries / 0.0.1
     var pastriesUrl = container.getRestMockEndpoint("API Pastries", "0.0.1");
 
@@ -58,7 +71,7 @@ describe("MicrocksContainer", () => {
   it("should start, load artifacts and contract test mock", async () => {
     const network = await new Network().start();
 
-    // Start mcirocks container and other containers.
+    // Start microcks container and other containers.
     const container = await new MicrocksContainer().withNetwork(network).start();
     const badImpl = await new GenericContainer("quay.io/microcks/contract-testing-demo:01")
         .withNetwork(network)
