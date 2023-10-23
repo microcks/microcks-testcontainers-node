@@ -14,3 +14,4 @@
  * limitations under the License.
  */
 export * from "./microcks-container";
+export * from "./microcks-containers-ensemble";

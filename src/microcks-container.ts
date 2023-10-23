@@ -28,11 +28,23 @@ export class MicrocksContainer extends GenericContainer {
     super(image);
   }
 
+  /**
+   * Provide paths to artifacts that will be imported as primary or main ones within the Microcks container
+   * once it will be started and healthy.
+   * @param {[String]} artifacts The file paths to artifacts (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
+   * @returns this
+   */
   public withMainArtifacts(artifacts: string[]): this {
     this.mainArtifacts = this.mainArtifacts.concat(artifacts);
     return this;
   }
 
+  /**
+   * Provide paths to artifacts that will be imported as secondary ones within the Microcks container
+   * once it will be started and healthy.
+   * @param {[String]} artifacts The file paths to artifacts (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
+   * @returns this
+   */
   public withSecondaryArtifacts(artifacts: string[]): this {
     this.secondaryArtifacts = this.secondaryArtifacts.concat(artifacts);
     return this;
