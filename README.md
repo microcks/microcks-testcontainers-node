@@ -9,9 +9,9 @@ Node/TypeScript library for Testcontainers that enables embedding Microcks into 
 
 ## Build Status
 
-Latest released version is `0.1.2`.
+Latest released version is `0.2.0`.
 
-Current development version is `0.2.0`.
+Current development version is `0.2.1`.
 
 ## How to use it?
 
