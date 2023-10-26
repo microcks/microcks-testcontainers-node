@@ -36,6 +36,22 @@ const container = await new MicrocksContainer().start();
 To use Microcks mocks or contract-testing features, you first need to import OpenAPI, Postman Collection, GraphQL or gRPC artifacts. 
 Artifacts can be imported as main/Primary ones or as secondary ones. See [Multi-artifacts support](https://microcks.io/documentation/using/importers/#multi-artifacts-support) for details.
 
+You can do it before starting the container using arrays of paths:
+
+```ts
+import * as path from "path";
+
+const resourcesDir = path.resolve(__dirname, "..", "test-resources");
+
+const container = await new MicrocksContainer()
+    .withMainArtifacts([path.resolve(resourcesDir, "apipastries-openapi.yaml")])
+    .withSecondaryArtifacts([path.resolve(resourcesDir, "apipastries-postman-collection.json")])
+    .start();
+
+```
+
+or once the container is started :
+
 ```ts
 import * as path from "path";
 
@@ -85,3 +101,60 @@ expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("obje
 ```
 
 The `TestResult` gives you access to all details regarding success of failure on different test cases.
+
+### Advanced features with MicrocksContainersEnsemble
+
+The `MicrocksContainer` referenced above supports essential features of Microcks provided by the main Microcks container. The list of supported features is the following:
+
+* Mocking of REST APIs using different kinds of artifacts,
+* Contract-testing of REST APIs using `OPEN_API_SCHEMA` runner/strategy,
+* Mocking and contract-testing of SOAP WebServices,
+* Mocking and contract-testing of GraphQL APIs,
+* Mocking and contract-testing of gRPC APIs.
+
+To support features like `POSTMAN` contract-testing, we introduced MicrocksContainersEnsemble that allows managing additional Microks services. MicrocksContainersEnsemble allow you to implement [Different levels of API contract testing](https://medium.com/@lbroudoux/different-levels-of-api-contract-testing-with-microcks-ccc0847f8c97) in the Inner Loop with Testcontainers!
+
+A `MicrocksContainersEnsemble` conforms to Testcontaierns lifecycle methods and presents roughly the same interface as a `MicrocksContainer`. To You can create and build an ensemble that way after having initialized a `Network`:
+
+```ts
+import { Network } from "testcontainers";
+import { MicrocksContainer } from "@microcks/microcks-testcontainers";
+
+const network = await new Network().start();
+
+const ensemble = await new MicrocksContainersEnsemble(network)
+    .withMainArtifacts([path.resolve(resourcesDir, "apipastries-openapi.yaml")])
+    .withSecondaryArtifacts([path.resolve(resourcesDir, "apipastries-postman-collection.json")])
+    .start();
+```
+
+A `MicrocksContainer` is wrapped by an ensemble and is still available to import artifacts and execute test methods. You have to access it using:
+
+```ts
+const microcks = ensemble.getMicrocksContainer();
+await microcks.importAsMainArtifact(...);
+(await microcks.logs())
+  .on("data", line => console.log(line))
+  .on("err", line => console.error(line))
+  .on("end", () => console.log("Stream closed"));
+```
+
+You can execute a `POSTMAN`` test using an ensemble that way:
+
+```ts
+var testRequest = {
+    serviceId: "API Pastries:0.0.1",
+    runnerType: TestRunnerType.POSTMAN,
+    testEndpoint: "http://good-impl:3003",
+    timeout: 3000
+}
+
+var testResult = await ensemble.getMicrocksContainer().testEndpoint(testRequest);
+
+expect(testResult.success).toBe(true);
+expect(testResult.testedEndpoint).toBe("http://good-impl:3003");
+expect(testResult.testCaseResults.length).toBe(3);
+expect(testResult.testCaseResults[0].testStepResults[0].message).toBeUndefined();
+```
+
+Please refer to our [MicrocksContainersEnsembleTest](https://github.com/microcks/microcks-testcontainers-node/blob/src/microcks-containers-ensemble.test.ts) for comprehensive example on how to use it.
