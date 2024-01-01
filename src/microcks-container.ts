@@ -23,6 +23,7 @@ const GRPC_PORT = 9090;
 export class MicrocksContainer extends GenericContainer {
   private mainArtifacts: string[] = [];
   private secondaryArtifacts: string[] = [];
+  private secrets: Secret[] = [];
 
   constructor(image = "quay.io/microcks/microcks-uber:1.8.0") {
     super(image);
@@ -50,6 +51,16 @@ export class MicrocksContainer extends GenericContainer {
     return this;
   }
 
+  /**
+   * Provide Secret that should be imported in Microcks after startup.
+   * @param {[Secret]} secret The description of a secret to access remote Git repository, test endpoint or broker.
+   * @returns this
+   */
+  public withSecret(secret: Secret): this {
+    this.secrets.push(secret);
+    return this;
+  }
+
   public override async start(): Promise<StartedMicrocksContainer> {
     this.withExposedPorts(...(this.hasExposedPorts ? this.exposedPorts : [HTTP_PORT, GRPC_PORT]))
         .withWaitStrategy(Wait.forLogMessage(/.*Started MicrocksApplication.*/, 1));
@@ -61,6 +72,9 @@ export class MicrocksContainer extends GenericContainer {
     }
     for (let i=0; i<this.secondaryArtifacts.length; i++) {
       await startedContainer.importAsSecondaryArtifact(this.secondaryArtifacts[i]);
+    }
+    for (let i=0; i<this.secrets.length; i++) {
+      await startedContainer.createSecret(this.secrets[i]);
     }
 
     return startedContainer;
@@ -75,6 +89,16 @@ export interface TestRequest {
   secretName?: string;
   filteredOperations?: string[];
   operationsHeaders?: any;
+}
+
+export interface Secret {
+  name: string;
+  description: string;
+  username: string;
+  password: string;
+  token: string;
+  tokenHeader: string;
+  caCertPem: string;
 }
 
 export interface SecretRef {
@@ -202,6 +226,31 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
   }
 
   /**
+   * Create a secret to access remote Git repository, test endpoint or broker.
+   * @param {Secret} secret The description of a secret to access remote Git repository, test endpoint or broker.
+   * @returns Success or error via Promise
+   */
+  public async createSecret(secret: Secret): Promise<void> {
+    const createURI = this.getHttpEndpoint() + "/api/secrets";
+
+    // Prepare headers with content type and length.
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    }
+
+    const response = await fetch(createURI, {
+      method: 'POST',
+      body: JSON.stringify(secret),
+      headers: headers
+    });
+
+    if (response.status != 201) {
+      throw new Error("Secret has not been correctly created: " + await response.json());
+    }
+  }
+
+  /**
    * Launch a conformance test on an endpoint.
    * @param {TestRequest} testRequest The test specifications (API under test, endpoint, runner, ...)
    * @returns The final TestResult containing information on success/failure as well as details on test cases.
@@ -272,7 +321,7 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
 
     if (response.status != 201) {
       throw new Error("Artifact has not been correctly been imported: " + await response.json());
-   }
+    }
   }
 
   private refreshTestResult(testResultId: string): Promise<TestResult> {
