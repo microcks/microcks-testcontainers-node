@@ -17,10 +17,10 @@ import * as path from "path";
 import { readFile, stat } from "fs/promises";
 import { AbstractStartedContainer, GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 
-const HTTP_PORT = 8080;
-const GRPC_PORT = 9090;
-
 export class MicrocksContainer extends GenericContainer {
+  static readonly MICROCKS_HTTP_PORT = 8080;
+  static readonly MICROCKS_GRPC_PORT = 9090;
+  
   private mainArtifacts: string[] = [];
   private secondaryArtifacts: string[] = [];
   private secrets: Secret[] = [];
@@ -61,8 +61,16 @@ export class MicrocksContainer extends GenericContainer {
     return this;
   }
 
+  /**
+   * Get the image name used for instantiating this container.
+   * @returns The Docker image name
+   */
+  public getImageName(): string {
+    return this.imageName.string;
+  }
+
   public override async start(): Promise<StartedMicrocksContainer> {
-    this.withExposedPorts(...(this.hasExposedPorts ? this.exposedPorts : [HTTP_PORT, GRPC_PORT]))
+    this.withExposedPorts(...(this.hasExposedPorts ? this.exposedPorts : [MicrocksContainer.MICROCKS_HTTP_PORT, MicrocksContainer.MICROCKS_GRPC_PORT]))
         .withWaitStrategy(Wait.forLogMessage(/.*Started MicrocksApplication.*/, 1));
 
     let startedContainer = new StartedMicrocksContainer(await super.start());
@@ -157,8 +165,8 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
     startedTestContainer: StartedTestContainer
   ) {
     super(startedTestContainer);
-    this.httpPort = startedTestContainer.getMappedPort(HTTP_PORT);
-    this.grpcPort = startedTestContainer.getMappedPort(GRPC_PORT);
+    this.httpPort = startedTestContainer.getMappedPort(MicrocksContainer.MICROCKS_HTTP_PORT);
+    this.grpcPort = startedTestContainer.getMappedPort(MicrocksContainer.MICROCKS_GRPC_PORT);
   }
 
   /**

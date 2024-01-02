@@ -18,6 +18,7 @@ import * as path from "path";
 import { GenericContainer, Network, Wait } from "testcontainers";
 import { MicrocksContainersEnsemble } from "./microcks-containers-ensemble";
 import { TestRequest, TestRunnerType } from "./microcks-container";
+import { WebSocket } from "ws";
 
 describe("MicrocksContainersEnsemble", () => {
   jest.setTimeout(180_000);
@@ -65,6 +66,7 @@ describe("MicrocksContainersEnsemble", () => {
     const ensemble = await new MicrocksContainersEnsemble(network)
       .withMainArtifacts([path.resolve(resourcesDir, "apipastries-openapi.yaml")])
       .withSecondaryArtifacts([path.resolve(resourcesDir, "apipastries-postman-collection.json")])
+      .withPostman()
       .start();
 
     const badImpl = await new GenericContainer("quay.io/microcks/contract-testing-demo:02")
@@ -116,4 +118,44 @@ describe("MicrocksContainersEnsemble", () => {
     await network.stop();
   });
   // }
+
+  // start and mock async {
+  it("should start, load artifacts and mock async WebSocket", async () => {
+    const network = await new Network().start();
+
+    // Start ensemble, load artifacts and start other containers.
+    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:nightly")
+      .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
+      .withAsyncFeature("quay.io/microcks/microcks-uber-async-minion:nightly")
+      .start();
+
+    // Initialize messages list and connect to mock endpoint.
+    let messages: string[] = [];
+    let wsEndpoint = ensemble.getAsyncMinionContainer()?.getWSMockEndpoint("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders");
+    let expectedMessage = "{\"id\":\"4dab240d-7847-4e25-8ef3-1530687650c8\",\"customerId\":\"fe1088b3-9f30-4dc1-a93d-7b74f0a072b9\",\"status\":\"VALIDATED\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}";
+
+    const ws = new WebSocket(wsEndpoint as string);    
+    ws.on('error', console.error);
+    ws.on('message', function message(data) {
+      messages.push(data.toString());
+    });
+
+    // Wait 7 seconds for messages from Async Minion WebSocket to get at least 2 messages.
+    await delay(7000);
+
+    expect(messages.length).toBeGreaterThan(0);
+    messages.forEach(message => {
+      expect(message).toBe(expectedMessage);
+    });
+
+    // Now stop the ensemble, the containers and the network.
+    await ensemble.stop();
+    await network.stop();
+  });
+  // }
+
+
+  function delay(ms: number) {
+    return new Promise( resolve => setTimeout(resolve, ms) );
+  }
 });

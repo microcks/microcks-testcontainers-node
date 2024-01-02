@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 import { GenericContainer, StartedNetwork, StartedTestContainer, StopOptions, Wait } from "testcontainers";
-import { MicrocksContainer, StartedMicrocksContainer } from "./microcks-container";
+import { MicrocksContainer, Secret, StartedMicrocksContainer } from "./microcks-container";
+import { AmazonServiceConnection, KafkaConnection, MicrocksAsyncMinionContainer, StartedMicrocksAsyncMinionContainer } from "./microcks-async-minion-container";
 
 export class MicrocksContainersEnsemble {
   private network: StartedNetwork;
   private microcksContainer: MicrocksContainer;
-  private postmanContainer: GenericContainer;
+  private postmanContainer?: GenericContainer;
+  private asyncMinionContainer?: MicrocksAsyncMinionContainer;
 
   constructor(network: StartedNetwork, image = "quay.io/microcks/microcks-uber:1.8.0") {
     this.network = network;
@@ -30,12 +32,71 @@ export class MicrocksContainersEnsemble {
       .withEnvironment({
         POSTMAN_RUNNER_URL: "http://postman:3000",
         TEST_CALLBACK_URL: "http://microcks:8080",
+        ASYNC_MINION_URL: "http://microcks-async-minion:" + MicrocksAsyncMinionContainer.MICROCKS_ASYNC_MINION_HTTP_PORT,
       });
+  }
 
-    this.postmanContainer = new GenericContainer("quay.io/microcks/microcks-postman-runtime:latest")
+  /**
+   * Enable the Postman runtime container with provided container image.
+   * @param {String} image The name (with tag/version) of Microcks Postman runtime to use.
+   * @returns this
+   */
+  public withPostman(image = "quay.io/microcks/microcks-postman-runtime:latest"): this {
+    this.postmanContainer = new GenericContainer(image)
       .withNetwork(this.network)
       .withNetworkAliases("postman")
       .withWaitStrategy(Wait.forLogMessage(/.*postman-runtime wrapper listening on port.*/, 1));
+    return this;
+  }
+
+  /**
+   * Enable the Async Feature container with provided container image.
+   * @param {String} image The name (with tag/version) of Microcks Async Minion Uber distribution to use.
+   * @returns this
+   */
+  public withAsyncFeature(image?: string): this {
+    let asyncMinionImage = (image ? image : this.microcksContainer.getImageName().replace("microcks-uber", "microcks-uber-async-minion"));
+    this.asyncMinionContainer = new MicrocksAsyncMinionContainer(this.network, asyncMinionImage);
+    return this;
+  }
+
+  /**
+   * Once the Async Feature is enabled, connects to a Kafka broker.
+   * @param connection Connection details to a Kafka broker.
+   * @returns this
+   */
+  public withKafkaConnection(connection: KafkaConnection): this {
+    if (this.asyncMinionContainer == undefined) {
+      throw new Error('Async feature must have been enabled first');
+    }
+    this.asyncMinionContainer?.withKafkaConnection(connection);
+    return this;
+  }
+
+  /**
+   * Once the Async Feature is enabled, connects to an Amazon SQS service.
+   * @param {AmazonServiceConnection} connection Connection details to an Amazon SQS service.
+   * @returns this
+   */
+  public withAmazonSQSConnection(connection: AmazonServiceConnection): this {
+    if (this.asyncMinionContainer == undefined) {
+      throw new Error('Async feature must have been enabled first');
+    }
+    this.asyncMinionContainer?.withAmazonSQSConnection(connection);
+    return this;
+  }
+
+  /**
+   * Once the Async Feature is enabled, connects to an Amazon SNS service.
+   * @param {AmazonServiceConnection} connection Connection details to an Amazon SQS service.
+   * @returns this
+   */
+  public withAmazonSNSConnection(connection: AmazonServiceConnection): this {
+    if (this.asyncMinionContainer == undefined) {
+      throw new Error('Async feature must have been enabled first');
+    }
+    this.asyncMinionContainer?.withAmazonSNSConnection(connection);
+    return this;
   }
 
   /**
@@ -60,37 +121,60 @@ export class MicrocksContainersEnsemble {
     return this;
   }
 
+  /**
+   * Provide Secret that should be imported in Microcks after startup.
+   * @param {[Secret]} secret The description of a secret to access remote Git repository, test endpoint or broker.
+   * @returns this
+   */
+  public withSecret(secret: Secret): this {
+    this.microcksContainer.withSecret(secret);
+    return this;
+  }
+
   public async start(): Promise<StartedMicrocksContainersEnsemble> {
     return new StartedMicrocksContainersEnsemble(
       await this.microcksContainer.start(),
-      await this.postmanContainer.start()
+      await this.postmanContainer?.start(),
+      await this.asyncMinionContainer?.start()
     );
   }
 }
 
 export class StartedMicrocksContainersEnsemble {
   private readonly startedMicrocksContainer: StartedMicrocksContainer;
-  private readonly startedPostmanContainer: StartedTestContainer;
+  private readonly startedPostmanContainer?: StartedTestContainer;
+  private readonly startedAsyncMinionContainer?: StartedMicrocksAsyncMinionContainer;
 
   constructor(
     startedMicrocksContainer: StartedMicrocksContainer,
-    startedPostmanContainer: StartedTestContainer
+    startedPostmanContainer: StartedTestContainer | undefined,
+    startedAsyncMinionContainer: StartedMicrocksAsyncMinionContainer | undefined
   ) {
     this.startedMicrocksContainer = startedMicrocksContainer;
     this.startedPostmanContainer = startedPostmanContainer;
+    this.startedAsyncMinionContainer = startedAsyncMinionContainer;
   }
 
   public getMicrocksContainer(): StartedMicrocksContainer {
     return this.startedMicrocksContainer;
   }
 
-  public getPostmanContainer(): StartedTestContainer {
+  public getPostmanContainer(): StartedTestContainer | undefined {
     return this.startedPostmanContainer;
+  }
+
+  public getAsyncMinionContainer(): StartedMicrocksAsyncMinionContainer | undefined {
+    return this.startedAsyncMinionContainer;
   }
 
   public async stop(options?: Partial<StopOptions>): Promise<StoppedMicrocksContainersEnsemble> {
     await this.startedMicrocksContainer.stop(options);
-    await this.startedPostmanContainer.stop(options);
+    if (this.startedPostmanContainer) {
+      await this.startedPostmanContainer.stop(options);
+    }
+    if (this.startedAsyncMinionContainer) {
+      await this.startedAsyncMinionContainer.stop(options);
+    }
     return new StoppedMicrocksContainersEnsemble();
   }
 }
