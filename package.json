@@ -22,7 +22,7 @@
     "test": "cross-env DEBUG=testcontainers* jest"
   },
   "dependencies": {
-    "testcontainers": "^10.2.1"
+    "testcontainers": "^10.4.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.3",
