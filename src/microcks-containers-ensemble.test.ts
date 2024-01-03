@@ -15,7 +15,7 @@
  */
 import * as path from "path";
 
-import { ListQueuesCommand, ReceiveMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
+import { CreateQueueCommand, ListQueuesCommand, ReceiveMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { GenericContainer, Network, Wait } from "testcontainers";
 import { LocalstackContainer } from "@testcontainers/localstack";
 import { MicrocksContainersEnsemble } from "./microcks-containers-ensemble";
@@ -229,6 +229,23 @@ describe("MicrocksContainersEnsemble", () => {
       })
       .start();
 
+    // Create the Queue that has to be used by Microcks.
+    const client = new SQSClient({
+      region: "us-east-1",
+      credentials: {
+        accessKeyId: 'test',
+        secretAccessKey: 'test'
+      },
+      endpoint: {
+        url: new URL(localstack.getConnectionUri())
+      }
+    });
+
+    const createCommand = new CreateQueueCommand({
+      QueueName: 'PastryordersAPI-010-pastry-orders'
+    })
+    await client.send(createCommand);
+
     const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:nightly")
       .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
       .withAsyncFeature()
@@ -244,20 +261,6 @@ describe("MicrocksContainersEnsemble", () => {
     let messages: string[] = [];
     let sqsEndpoint = ensemble.getAsyncMinionContainer()?.getAmazonSQSMockQueue("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders");
     let expectedMessage = "{\"id\":\"4dab240d-7847-4e25-8ef3-1530687650c8\",\"customerId\":\"fe1088b3-9f30-4dc1-a93d-7b74f0a072b9\",\"status\":\"VALIDATED\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}";
-
-    const client = new SQSClient({
-      region: "us-east-1",
-      credentials: {
-        accessKeyId: 'test',
-        secretAccessKey: 'test'
-      },
-      endpoint: {
-        url: new URL(localstack.getConnectionUri())
-      }
-    });
-
-    // Wait a moment to be sure that minion has created the SQS queue.
-    await delay(2000);
 
     // Retrieve this queue URL
     const listCommand = new ListQueuesCommand({
