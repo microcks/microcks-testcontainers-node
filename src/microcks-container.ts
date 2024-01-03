@@ -277,7 +277,7 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
       const responseJson = await response.json()
       const testResultId: string = responseJson.id;
 
-      const endDate: number = Date.now() + testRequest.timeout;
+      const endDate: number = Date.now() + testRequest.timeout + 1000;
       var testResult: TestResult = await this.refreshTestResult(testResultId);
       while (testResult.inProgress && Date.now() < endDate) {
         await this.wait(250);

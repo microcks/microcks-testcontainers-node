@@ -15,7 +15,9 @@
  */
 import * as path from "path";
 
+import { ListQueuesCommand, ReceiveMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { GenericContainer, Network, Wait } from "testcontainers";
+import { LocalstackContainer } from "@testcontainers/localstack";
 import { MicrocksContainersEnsemble } from "./microcks-containers-ensemble";
 import { TestRequest, TestRunnerType } from "./microcks-container";
 import { WebSocket } from "ws";
@@ -119,7 +121,7 @@ describe("MicrocksContainersEnsemble", () => {
   });
   // }
 
-  // start and mock async {
+  // start and mock async WS {
   it("should start, load artifacts and mock async WebSocket", async () => {
     const network = await new Network().start();
 
@@ -150,6 +152,149 @@ describe("MicrocksContainersEnsemble", () => {
 
     // Now stop the ensemble, the containers and the network.
     await ensemble.stop();
+    await network.stop();
+  });
+  // }
+
+  // start and contract test async WS {
+  it("should start, load artifacts and contract test mock async WebSocket", async () => {
+    const network = await new Network().start();
+
+    // Start ensemble, load artifacts and start other containers.
+    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:nightly")
+      .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
+      .withAsyncFeature()
+      .start();
+
+    const badImpl = await new GenericContainer("quay.io/microcks/contract-testing-demo-async:01")
+      .withNetwork(network)
+      .withNetworkAliases("bad-impl")
+      .withWaitStrategy(Wait.forLogMessage("Starting WebSocket server on ws://localhost:4001/websocket", 1))
+      .start();
+    const goodImpl = await new GenericContainer("quay.io/microcks/contract-testing-demo-async:02")
+      .withNetwork(network)
+      .withNetworkAliases("good-impl")
+      .withWaitStrategy(Wait.forLogMessage("Starting WebSocket server on ws://localhost:4002/websocket", 1))
+      .start();
+
+    var testRequest: TestRequest = {
+      serviceId: "Pastry orders API:0.1.0",
+      runnerType: TestRunnerType.ASYNC_API_SCHEMA,
+      testEndpoint: "ws://bad-impl:4001/websocket",
+      timeout: 5000
+    }
+
+    var testResult = await ensemble.getMicrocksContainer().testEndpoint(testRequest);
+
+    expect(testResult.success).toBe(false);
+    expect(testResult.testedEndpoint).toBe("ws://bad-impl:4001/websocket");
+    expect(testResult.testCaseResults.length).toBeGreaterThan(0);
+    expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("object has missing required properties");
+
+    testRequest = {
+      serviceId: "Pastry orders API:0.1.0",
+      runnerType: TestRunnerType.ASYNC_API_SCHEMA,
+      testEndpoint: "ws://good-impl:4002/websocket",
+      timeout: 5000
+    }
+    testResult = await ensemble.getMicrocksContainer().testEndpoint(testRequest);
+
+    expect(testResult.success).toBe(true);
+    expect(testResult.testedEndpoint).toBe("ws://good-impl:4002/websocket");
+    expect(testResult.testCaseResults.length).toBeGreaterThan(0);
+    testResult.testCaseResults.forEach(tcr => {
+      tcr.testStepResults.forEach(tsr => {
+        expect(tsr.message).toBeUndefined();
+      })
+    });
+
+    // Now stop the ensemble, the containers and the network.
+    await ensemble.stop();
+    await badImpl.stop();
+    await goodImpl.stop();
+    await network.stop();
+  });
+  // }
+
+  // start and mock async SQS {
+  it("should start, load artifacts and mock async SQS", async () => {
+    const network = await new Network().start();
+
+    // Start ensemble, load artifacts and start other containers.
+    const localstack = await new LocalstackContainer("localstack/localstack:latest")
+      .withNetwork(network)
+      .withNetworkAliases("localstack")
+      .withEnvironment({
+        SERVICES: 'sqs'
+      })
+      .start();
+
+    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:nightly")
+      .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
+      .withAsyncFeature()
+      .withAmazonSQSConnection({
+        region: 'us-east-1',
+        accessKey: 'test',
+        secretKey: 'test',
+        endpointOverride: 'http://localstack:4566'
+      })
+      .start();
+
+    // Initialize messages list and connect to mock endpoint.
+    let messages: string[] = [];
+    let sqsEndpoint = ensemble.getAsyncMinionContainer()?.getAmazonSQSMockQueue("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders");
+    let expectedMessage = "{\"id\":\"4dab240d-7847-4e25-8ef3-1530687650c8\",\"customerId\":\"fe1088b3-9f30-4dc1-a93d-7b74f0a072b9\",\"status\":\"VALIDATED\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}";
+
+    console.log("localstack.getConnectionUri(): " + localstack.getConnectionUri());
+    const client = new SQSClient({
+      region: "us-east-1",
+      credentials: {
+        accessKeyId: 'test',
+        secretAccessKey: 'test'
+      },
+      endpoint: {
+        url: new URL(localstack.getConnectionUri())
+      }
+    });
+
+    // Wait a moment to be sure that minion has created the SQS queue.
+    await delay(1500);
+
+    // Retrieve this queue URL
+    const listCommand = new ListQueuesCommand({
+      QueueNamePrefix: sqsEndpoint,
+      MaxResults: 1
+    });
+    try {
+      const listResponse = await client.send(listCommand);
+      const queueUrl = listResponse.QueueUrls ? listResponse.QueueUrls[0] : "null";
+
+      const startTime = Date.now();
+      const timeoutTime = startTime + 4000;
+      while (Date.now() - startTime < 4000) {
+        let receiveCommand = new ReceiveMessageCommand({
+          QueueUrl: queueUrl,
+          MaxNumberOfMessages: 10,
+          WaitTimeSeconds: Math.round((timeoutTime - Date.now()) / 1000)
+        });
+
+        let receiveResponse = await client.send(receiveCommand);
+        receiveResponse.Messages?.forEach(message => {
+          messages.push(message.Body as string)
+        })
+      }
+    } finally {
+      client.destroy();
+    }
+
+    expect(messages.length).toBeGreaterThan(0);
+    messages.forEach(message => {
+      expect(message).toBe(expectedMessage);
+    });
+
+    // Now stop the ensemble, the containers and the network.
+    await ensemble.stop();
+    await localstack.stop();
     await network.stop();
   });
   // }

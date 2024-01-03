@@ -127,6 +127,51 @@ export class StartedMicrocksAsyncMinionContainer extends AbstractStartedContaine
     endpoint += `/ws/${service.replace(/\s/g, '+')}/${version.replace(/\s/g, '+')}/${operationName}`;
     return endpoint;
   }
+
+  /**
+   * Get the exposed mock endpoints for a Kafka Service.
+   * @param {String} service The name of Service/API
+   * @param {String} version The version of Service/API
+   * @param {String} operationName The name of operation to get the endpoint for
+   * @returns  A usable endpoint to interact with Microcks mocks.
+   */
+  public getKafkaMockTopic(service: string, version: string, operationName: string): string {
+    // operationName may start with SUBSCRIBE or PUBLISH.
+    if (operationName.indexOf(' ') != -1) {
+      operationName = operationName.split(' ')[1];
+    }
+    return `${service.replace(/\s/g, '').replace(/-/g, '')}-${version}-${operationName.replace(/\//g, '-')}`;
+  }
+
+  /**
+   * Get the exposed mock endpoints for an Amazon SQS Service.
+   * @param {String} service The name of Service/API
+   * @param {String} version The version of Service/API
+   * @param {String} operationName The name of operation to get the endpoint for
+   * @returns  A usable endpoint to interact with Microcks mocks.
+   */
+  public getAmazonSQSMockQueue(service: string, version: string, operationName: string): string {
+    return this.getAmazonServiceMockDestination(service, version, operationName);
+  }
+
+  /**
+   * Get the exposed mock endpoints for an Amazon SNS Service.
+   * @param {String} service The name of Service/API
+   * @param {String} version The version of Service/API
+   * @param {String} operationName The name of operation to get the endpoint for
+   * @returns  A usable endpoint to interact with Microcks mocks.
+   */
+  public getAmazonSNSMockTopic(service: string, version: string, operationName: string): string {
+    return this.getAmazonServiceMockDestination(service, version, operationName);
+  }
+
+  private getAmazonServiceMockDestination(service: string, version: string, operationName: string): string {
+    // operationName may start with SUBSCRIBE or PUBLISH.
+    if (operationName.indexOf(' ') != -1) {
+      operationName = operationName.split(' ')[1];
+    }
+    return `${service.replace(/\s/g, '').replace(/-/g, '')}-${version.replace(/\s/g, '').replace(/\./g, '')}-${operationName.replace(/\//g, '-')}`;
+  }
 }
 
 

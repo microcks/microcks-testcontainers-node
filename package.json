@@ -25,6 +25,8 @@
     "testcontainers": "^10.4.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-sqs": "3.398.0",
+    "@testcontainers/localstack": "^10.4.0",
     "@types/jest": "^29.5.3",
     "@types/ws": "^8.5.10",
     "cross-env": "^7.0.3",
