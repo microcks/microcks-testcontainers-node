@@ -245,7 +245,6 @@ describe("MicrocksContainersEnsemble", () => {
     let sqsEndpoint = ensemble.getAsyncMinionContainer()?.getAmazonSQSMockQueue("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders");
     let expectedMessage = "{\"id\":\"4dab240d-7847-4e25-8ef3-1530687650c8\",\"customerId\":\"fe1088b3-9f30-4dc1-a93d-7b74f0a072b9\",\"status\":\"VALIDATED\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}";
 
-    console.log("localstack.getConnectionUri(): " + localstack.getConnectionUri());
     const client = new SQSClient({
       region: "us-east-1",
       credentials: {
@@ -258,7 +257,7 @@ describe("MicrocksContainersEnsemble", () => {
     });
 
     // Wait a moment to be sure that minion has created the SQS queue.
-    await delay(1500);
+    await delay(2000);
 
     // Retrieve this queue URL
     const listCommand = new ListQueuesCommand({
