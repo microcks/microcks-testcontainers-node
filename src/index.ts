@@ -15,3 +15,4 @@
  */
 export * from "./microcks-container";
 export * from "./microcks-containers-ensemble";
+export * from "./microcks-async-minion-container";
