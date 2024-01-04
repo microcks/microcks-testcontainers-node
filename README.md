@@ -102,6 +102,33 @@ expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("obje
 
 The `TestResult` gives you access to all details regarding success of failure on different test cases.
 
+A comprehensive NestJS demo application illustrating both usages is available here: [nest-order-service](https://github.com/microcks/api-lifecycle/tree/master/shift-left-demo/nest-order-service).
+
+### Using authentication Secrets
+
+It's a common need to authenticate to external systems like Http/Git repositories or external brokers. For that, the `MicrocksContainer` provides the `withSecret()` method to register authentication secrets at startup:
+
+```ts
+microcks.withSecret({
+        name: 'localstack secret',
+        username: 'test',
+        password: 'test'
+    })
+    .start();
+```
+
+You may reuse this secret using its name later on during a test like this:
+
+```ts
+const testRequest: TestRequest = {
+    serviceId: "Pastry orders API:0.1.0",
+    runnerType: TestRunnerType.ASYNC_API_SCHEMA,
+    testEndpoint: "sqs://us-east-1/pastry-orders?overrideUrl=http://localstack:4566",
+    secretName: "localstack secret",
+    timeout: 5000
+}
+```
+
 ### Advanced features with MicrocksContainersEnsemble
 
 The `MicrocksContainer` referenced above supports essential features of Microcks provided by the main Microcks container. The list of supported features is the following:
@@ -139,6 +166,17 @@ await microcks.importAsMainArtifact(...);
   .on("end", () => console.log("Stream closed"));
 ```
 
+Please refer to our [MicrocksContainersEnsembleTest](https://github.com/microcks/microcks-testcontainers-node/blob/src/microcks-containers-ensemble.test.ts) for comprehensive example on how to use it.
+
+#### Postman contract-testing
+
+On this `ensemble` you may want to enable additional features such as Postman contract-testing:
+
+```ts
+ensemble.withPostman();
+ensemble.start();
+```
+
 You can execute a `POSTMAN`` test using an ensemble that way:
 
 ```ts
@@ -157,4 +195,48 @@ expect(testResult.testCaseResults.length).toBe(3);
 expect(testResult.testCaseResults[0].testStepResults[0].message).toBeUndefined();
 ```
 
-Please refer to our [MicrocksContainersEnsembleTest](https://github.com/microcks/microcks-testcontainers-node/blob/src/microcks-containers-ensemble.test.ts) for comprehensive example on how to use it.
+#### Asynchronous API support
+
+Asynchronous API feature need to be explicitly enabled as well. In the case you want to use it for mocking purposes,
+you'll have to specify additional connection details to the broker of your choice. See an example below with connection
+to a Kafka broker:
+
+```ts
+ensemble.withAsyncFeature()
+    .withKafkaConnection({
+        bootstrapServers: "kafka:9092"
+    });
+ensemble.start();
+```
+
+##### Using mock endpoints for your dependencies
+
+Once started, the `ensemble.getAsyncMinionContainer()` provides methods for retrieving mock endpoint names for the different
+supported protocols (WebSocket, Kafka, SQS and SNS).
+
+```ts
+const kafkaTopic = ensemble.getAsyncMinionContainer()
+    .getKafkaMockTopic("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders");
+```
+
+##### Launching new contract-tests
+
+Using contract-testing techniques on Asynchronous endpoints may require a different style of interacting with the Microcks
+container. For example, you may need to:
+1. Start the test making Microcks listen to the target async endpoint,
+2. Activate your System Under Tests so that it produces an event,
+3. Finalize the Microcks tests and actually ensure you received one or many well-formed events.
+
+As the `MicrocksContainer` provides the `testEndpoint(request: TestRequest): Promise<TestResult>` method, this is actually easy like:
+
+```ts
+// Start the test, making Microcks listen the endpoint provided in testRequest
+let testResultPromise: Promise<TestResult> = ensemble.getMicrocksContainer().testEndpoint(testRequest);
+
+// Here below: activate your app to make it produce events on this endpoint.
+// myapp.invokeBusinessMethodThatTriggerEvents();
+
+// Now retrieve the final test result and assert.
+let testResult = await testResultPromise;
+expect(testResult.success).toBe(true);
+```

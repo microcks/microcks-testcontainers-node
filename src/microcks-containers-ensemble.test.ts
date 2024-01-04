@@ -15,11 +15,11 @@
  */
 import * as path from "path";
 
-import { CreateQueueCommand, ListQueuesCommand, ReceiveMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
+import { CreateQueueCommand, ListQueuesCommand, ReceiveMessageCommand, SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { GenericContainer, Network, Wait } from "testcontainers";
 import { LocalstackContainer } from "@testcontainers/localstack";
 import { MicrocksContainersEnsemble } from "./microcks-containers-ensemble";
-import { TestRequest, TestRunnerType } from "./microcks-container";
+import { TestRequest, TestResult, TestRunnerType } from "./microcks-container";
 import { WebSocket } from "ws";
 
 describe("MicrocksContainersEnsemble", () => {
@@ -301,6 +301,122 @@ describe("MicrocksContainersEnsemble", () => {
   });
   // }
 
+  // start and contract test async SQS {
+  it("should start, load artifacts and contract test mock async SQS", async () => {
+    const network = await new Network().start();
+
+    // Start ensemble, load artifacts and start other containers.
+    const localstack = await new LocalstackContainer("localstack/localstack:latest")
+      .withNetwork(network)
+      .withNetworkAliases("localstack")
+      .start();
+
+    // Create the Queue that has to be used by Microcks.
+    const client = new SQSClient({
+      region: "us-east-1",
+      credentials: {
+        accessKeyId: 'test',
+        secretAccessKey: 'test'
+      },
+      endpoint: {
+        url: new URL(localstack.getConnectionUri())
+      }
+    });
+    const createCommand = new CreateQueueCommand({
+      QueueName: 'pastry-orders'
+    })
+    await client.send(createCommand);
+
+    // Retrieve this queue URL
+    const listCommand = new ListQueuesCommand({
+      QueueNamePrefix: 'pastry-orders',
+      MaxResults: 1
+    });
+    let queueUrl;
+    try {
+      const listResponse = await client.send(listCommand);
+      queueUrl = listResponse.QueueUrls ? listResponse.QueueUrls[0] : "null";
+    } finally {
+      client.destroy();
+    }
+
+    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:nightly")
+      .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
+      .withSecret({
+        name: 'localstack secret',
+        username: 'test',
+        password: 'test'
+      })
+      .withAsyncFeature()
+      .start();
+
+    // Initialize messages, start the test and publish messages.
+    const badMessage = "{\"id\":\"abcd\",\"customerId\":\"efgh\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}";
+    const goodMessage = "{\"id\":\"abcd\",\"customerId\":\"efgh\",\"status\":\"CREATED\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}";
+
+    var testRequest: TestRequest = {
+      serviceId: "Pastry orders API:0.1.0",
+      runnerType: TestRunnerType.ASYNC_API_SCHEMA,
+      testEndpoint: "sqs://us-east-1/pastry-orders?overrideUrl=http://localstack:4566",
+      secretName: "localstack secret",
+      timeout: 5000
+    }
+
+    // First test should fail with validation failure messages.
+    let testResultPromise: Promise<TestResult> = ensemble.getMicrocksContainer().testEndpoint(testRequest);
+
+    for (var i=0; i<5; i++) {
+      let sendCommand = new SendMessageCommand({
+        QueueUrl: queueUrl,
+        MessageBody: badMessage
+      });
+      client.send(sendCommand);
+      console.log('Sending bad message ' + i + ' on SQS queue');
+      delay(1000);
+    }
+
+    let testResult = await testResultPromise;
+
+    expect(testResult.success).toBe(false);
+    expect(testResult.testedEndpoint).toBe("sqs://us-east-1/pastry-orders?overrideUrl=http://localstack:4566");
+    expect(testResult.testCaseResults.length).toBeGreaterThan(0);
+    expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("object has missing required properties");
+    testResult.testCaseResults.forEach(tcr => {
+      tcr.testStepResults.forEach(tsr => {
+        expect(tsr.message).toContain("object has missing required properties");
+      })
+    });
+
+    // Second test should be OK with no validation failure messages.
+    let testResultPromise2: Promise<TestResult> = ensemble.getMicrocksContainer().testEndpoint(testRequest);
+
+    for (var i=0; i<5; i++) {
+      let sendCommand = new SendMessageCommand({
+        QueueUrl: queueUrl,
+        MessageBody: goodMessage
+      });
+      client.send(sendCommand);
+      console.log('Sending good message ' + i + ' on SQS queue');
+      delay(1000);
+    }
+
+    let testResult2 = await testResultPromise2;
+
+    expect(testResult2.success).toBe(true);
+    expect(testResult2.testedEndpoint).toBe("sqs://us-east-1/pastry-orders?overrideUrl=http://localstack:4566");
+    expect(testResult2.testCaseResults.length).toBeGreaterThan(0);
+    testResult2.testCaseResults.forEach(tcr => {
+      tcr.testStepResults.forEach(tsr => {
+        expect(tsr.message).toBeUndefined();
+      })
+    });
+
+    // Now stop the ensemble, the containers and the network.
+    await ensemble.stop();
+    await localstack.stop();
+    await network.stop();
+  });
+  // }
 
   function delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
