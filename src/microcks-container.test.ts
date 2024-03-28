@@ -28,6 +28,7 @@ describe("MicrocksContainer", () => {
     // Start container and load artifacts.
     const container = await new MicrocksContainer()
       .withMainArtifacts([path.resolve(resourcesDir, "apipastries-openapi.yaml")])
+      .withMainRemoteArtifacts(["https://raw.githubusercontent.com/microcks/microcks/master/samples/APIPastry-openapi.yaml"])
       .withSecondaryArtifacts([path.resolve(resourcesDir, "apipastries-postman-collection.json")])
       .start();
     
@@ -60,6 +61,15 @@ describe("MicrocksContainer", () => {
 
     expect(response.status).toBe(200);
     expect(responseJson.name).toBe("Eclair Chocolat");
+
+    // Check that mock from from main/primary remote artifact has been loaded.
+    pastriesUrl = container.getRestMockEndpoint("API Pastry - 2.0", "2.0.0");
+
+    response = await fetch(pastriesUrl + "/pastry/Millefeuille");
+    responseJson = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(responseJson.name).toBe("Millefeuille");
 
     // Now stop the container.
     await container.stop();

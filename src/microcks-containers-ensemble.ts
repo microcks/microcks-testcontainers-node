@@ -125,6 +125,28 @@ export class MicrocksContainersEnsemble {
   }
 
   /**
+   * Provide urls of remote artifacts that will be imported as primary or main ones within the Microcks container
+   * once it will be started and healthy.
+   * @param {[String]} remoteArtifactUrls The urls or remote artifacts (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
+   * @returns this
+   */
+  public withMainRemoteArtifacts(remoteArtifactUrls: string[]): this {
+    this.microcksContainer.withMainRemoteArtifacts(remoteArtifactUrls);
+    return this;
+  }
+
+  /**
+   * Provide urls of remote artifacts that will be imported as secondary ones within the Microcks container
+   * once it will be started and healthy.
+   * @param {[String]} remoteArtifactUrls The furls or remote (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
+   * @returns this
+   */
+  public withSecondaryRemoteArtifacts(remoteArtifactUrls: string[]): this {
+    this.microcksContainer.withSecondaryRemoteArtifacts(remoteArtifactUrls);
+    return this;
+  }
+
+  /**
    * Provide Secret that should be imported in Microcks after startup.
    * @param {[Secret]} secret The description of a secret to access remote Git repository, test endpoint or broker.
    * @returns this

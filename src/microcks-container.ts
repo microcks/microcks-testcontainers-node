@@ -23,6 +23,8 @@ export class MicrocksContainer extends GenericContainer {
   
   private mainArtifacts: string[] = [];
   private secondaryArtifacts: string[] = [];
+  private mainRemoteArtifacts: string[] = [];
+  private secondaryRemoteArtifacts: string[] = [];
   private secrets: Secret[] = [];
 
   constructor(image = "quay.io/microcks/microcks-uber:1.9.0") {
@@ -54,6 +56,28 @@ export class MicrocksContainer extends GenericContainer {
   }
 
   /**
+   * Provide urls of remote artifacts that will be imported as primary or main ones within the Microcks container
+   * once it will be started and healthy.
+   * @param {[String]} remoteArtifactUrls The urls or remote artifacts (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
+   * @returns this
+   */
+  public withMainRemoteArtifacts(remoteArtifactUrls: string[]): this {
+    this.mainRemoteArtifacts = this.mainRemoteArtifacts.concat(remoteArtifactUrls);
+    return this;
+  }
+
+  /**
+   * Provide urls of remote artifacts that will be imported as secondary ones within the Microcks container
+   * once it will be started and healthy.
+   * @param {[String]} remoteArtifactUrls The furls or remote (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
+   * @returns this
+   */
+  public withSecondaryRemoteArtifacts(remoteArtifactUrls: string[]): this {
+    this.secondaryRemoteArtifacts = this.secondaryRemoteArtifacts.concat(remoteArtifactUrls);
+    return this;
+  }
+
+  /**
    * Provide Secret that should be imported in Microcks after startup.
    * @param {[Secret]} secret The description of a secret to access remote Git repository, test endpoint or broker.
    * @returns this
@@ -73,6 +97,13 @@ export class MicrocksContainer extends GenericContainer {
 
   public override async start(): Promise<StartedMicrocksContainer> {
     let startedContainer = new StartedMicrocksContainer(await super.start());
+    // Load remote artifacts before local ones.
+    for (let i=0; i<this.mainRemoteArtifacts.length; i++) {
+      await startedContainer.downloadAsMainArtifact(this.mainRemoteArtifacts[i]);
+    }
+    for (let i=0; i<this.secondaryRemoteArtifacts.length; i++) {
+      await startedContainer.downloadAsSecondaryArtifact(this.secondaryRemoteArtifacts[i]);
+    }
     // Import artifacts declared in configuration. 
     for (let i=0; i<this.mainArtifacts.length; i++) {
       await startedContainer.importAsMainArtifact(this.mainArtifacts[i]);
@@ -233,6 +264,24 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
   }
 
   /**
+   * Download a remote artifact as a primary or main one within the Microcks container.
+   * @param {String} remoteArtifactUrl The URL to remote artifact (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
+   * @returns Success or error via Promise
+   */
+  public async downloadAsMainArtifact(remoteArtifactUrl: string): Promise<void> {
+    return this.downloadArtifact(remoteArtifactUrl, true);
+  }
+
+  /**
+   * IDownload a remote artifact as a secondary one within the Microcks container.
+   * @param {String} remoteArtifactUrl The URL to remote artifact (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
+   * @returns Success or error via Promise
+   */
+  public async downloadAsSecondaryArtifact(remoteArtifactUrl: string): Promise<void> {
+    return this.downloadArtifact(remoteArtifactUrl, false);
+  }
+
+  /**
    * Create a secret to access remote Git repository, test endpoint or broker.
    * @param {Secret} secret The description of a secret to access remote Git repository, test endpoint or broker.
    * @returns Success or error via Promise
@@ -328,6 +377,29 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
 
     if (response.status != 201) {
       throw new Error("Artifact has not been correctly been imported: " + await response.json());
+    }
+  }
+
+  private async downloadArtifact(remoteArtifactUrl: string, mainArtifact: boolean): Promise<void> {
+    let formBody = new URLSearchParams({
+      "mainArtifact": String(mainArtifact),
+      "url": remoteArtifactUrl
+    });
+
+    // Prepare headers with content type and length.
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+    const downloadURI = this.getHttpEndpoint() + "/api/artifact/download";
+
+    const response = await fetch(downloadURI, {
+      method: 'POST',
+      body: formBody,
+      headers: headers,
+    })
+
+    if (response.status != 201) {
+      throw new Error("Artifact has not been correctly downloaded: " + await response.json());
     }
   }
 
