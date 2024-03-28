@@ -27,6 +27,8 @@ export class MicrocksContainer extends GenericContainer {
 
   constructor(image = "quay.io/microcks/microcks-uber:1.9.0") {
     super(image);
+    this.withExposedPorts(MicrocksContainer.MICROCKS_HTTP_PORT, MicrocksContainer.MICROCKS_GRPC_PORT)
+        .withWaitStrategy(Wait.forLogMessage(/.*Started MicrocksApplication.*/, 1));
   }
 
   /**
@@ -70,9 +72,6 @@ export class MicrocksContainer extends GenericContainer {
   }
 
   public override async start(): Promise<StartedMicrocksContainer> {
-    this.withExposedPorts(...(this.hasExposedPorts ? this.exposedPorts : [MicrocksContainer.MICROCKS_HTTP_PORT, MicrocksContainer.MICROCKS_GRPC_PORT]))
-        .withWaitStrategy(Wait.forLogMessage(/.*Started MicrocksApplication.*/, 1));
-
     let startedContainer = new StartedMicrocksContainer(await super.start());
     // Import artifacts declared in configuration. 
     for (let i=0; i<this.mainArtifacts.length; i++) {

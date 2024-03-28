@@ -23,9 +23,16 @@ export class MicrocksAsyncMinionContainer extends GenericContainer {
   private network: StartedNetwork;
   private extraProtocols: string = "";
   
-  constructor(network: StartedNetwork, image = "quay.io/microcks/microcks-uber-async-minion:1.8.1") {
+  constructor(network: StartedNetwork, image = "quay.io/microcks/microcks-uber-async-minion:1.9.0") {
     super(image);
     this.network = network;
+    this.withNetwork(this.network)
+        .withNetworkAliases("microcks-async-minion")
+        .withEnvironment({
+          MICROCKS_HOST_PORT: "microcks:" + MicrocksContainer.MICROCKS_HTTP_PORT
+        })
+        .withExposedPorts(MicrocksAsyncMinionContainer.MICROCKS_ASYNC_MINION_HTTP_PORT)
+        .withWaitStrategy(Wait.forLogMessage(/.*Profile prod activated\..*/, 1));
   }
 
   /**
@@ -85,14 +92,6 @@ export class MicrocksAsyncMinionContainer extends GenericContainer {
   }
 
   public override async start(): Promise<StartedMicrocksAsyncMinionContainer> {
-    this.withNetwork(this.network)
-        .withNetworkAliases("microcks-async-minion")
-        .withEnvironment({
-          MICROCKS_HOST_PORT: "microcks:" + MicrocksContainer.MICROCKS_HTTP_PORT
-        })
-        .withExposedPorts(...(this.hasExposedPorts ? this.exposedPorts : [MicrocksAsyncMinionContainer.MICROCKS_ASYNC_MINION_HTTP_PORT]))
-        .withWaitStrategy(Wait.forLogMessage(/.*Profile prod activated\..*/, 1));
-
     return new StartedMicrocksAsyncMinionContainer(await super.start());
   }
 
