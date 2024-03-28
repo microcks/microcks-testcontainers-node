@@ -23,7 +23,7 @@ export class MicrocksContainersEnsemble {
   private postmanContainer?: GenericContainer;
   private asyncMinionContainer?: MicrocksAsyncMinionContainer;
 
-  constructor(network: StartedNetwork, image = "quay.io/microcks/microcks-uber:1.8.1") {
+  constructor(network: StartedNetwork, image = "quay.io/microcks/microcks-uber:1.9.0") {
     this.network = network;
 
     this.microcksContainer = new MicrocksContainer(image)

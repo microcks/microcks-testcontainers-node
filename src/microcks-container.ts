@@ -25,7 +25,7 @@ export class MicrocksContainer extends GenericContainer {
   private secondaryArtifacts: string[] = [];
   private secrets: Secret[] = [];
 
-  constructor(image = "quay.io/microcks/microcks-uber:1.8.1") {
+  constructor(image = "quay.io/microcks/microcks-uber:1.9.0") {
     super(image);
   }
 
