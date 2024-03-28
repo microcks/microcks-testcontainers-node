@@ -56,6 +56,9 @@ export class MicrocksContainersEnsemble {
    */
   public withAsyncFeature(image?: string): this {
     let asyncMinionImage = (image ? image : this.microcksContainer.getImageName().replace("microcks-uber", "microcks-uber-async-minion"));
+    if (asyncMinionImage.endsWith("-native")) {
+      asyncMinionImage = asyncMinionImage.substring(0, asyncMinionImage.length - "-native".length);
+    }
     this.asyncMinionContainer = new MicrocksAsyncMinionContainer(this.network, asyncMinionImage);
     return this;
   }

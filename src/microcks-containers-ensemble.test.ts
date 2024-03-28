@@ -246,7 +246,7 @@ describe("MicrocksContainersEnsemble", () => {
     })
     await client.send(createCommand);
 
-    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:nightly")
+    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:1.9.0-native")
       .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
       .withAsyncFeature()
       .withAmazonSQSConnection({
@@ -256,7 +256,7 @@ describe("MicrocksContainersEnsemble", () => {
         endpointOverride: 'http://localstack:4566'
       })
       .start();
-
+          
     // Initialize messages list and connect to mock endpoint.
     let messages: string[] = [];
     let sqsEndpoint = ensemble.getAsyncMinionContainer()?.getAmazonSQSMockQueue("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders");
@@ -372,7 +372,7 @@ describe("MicrocksContainersEnsemble", () => {
       });
       client.send(sendCommand);
       console.log('Sending bad message ' + i + ' on SQS queue');
-      delay(1000);
+      await delay(500);
     }
 
     let testResult = await testResultPromise;
@@ -397,7 +397,7 @@ describe("MicrocksContainersEnsemble", () => {
       });
       client.send(sendCommand);
       console.log('Sending good message ' + i + ' on SQS queue');
-      delay(1000);
+      await delay(5000);
     }
 
     let testResult2 = await testResultPromise2;
