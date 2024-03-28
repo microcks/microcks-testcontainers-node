@@ -2,6 +2,8 @@
 
 Node/TypeScript library for Testcontainers that enables embedding Microcks into your unit tests with lightweight, throwaway instance thanks to containers
 
+Want to see this extension in action? Check out our [sample application](https://github.com/microcks/microcks-testcontainers-node-nest-demo). 🚀
+
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/microcks/microcks-testcontainers-node/build-verify.yml?logo=github&style=for-the-badge)](https://github.com/microcks/microcks-testcontainers-node/actions)
 [![Version](https://img.shields.io/npm/v/@microcks/microcks-testcontainers?color=blue&style=for-the-badge)](https://www.npmjs.com/package/@microcks/microcks-testcontainers)
 [![License](https://img.shields.io/github/license/microcks/microcks-testcontainers-java?style=for-the-badge&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
@@ -9,9 +11,9 @@ Node/TypeScript library for Testcontainers that enables embedding Microcks into 
 
 ## Build Status
 
-Latest released version is `0.2.2`.
+Latest released version is `0.2.3`.
 
-Current development version is `0.2.3`.
+Current development version is `0.2.4`.
 
 ## How to use it?
 
