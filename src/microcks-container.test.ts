@@ -27,6 +27,7 @@ describe("MicrocksContainer", () => {
   it("should start, load artifacts and expose mock", async () => {
     // Start container and load artifacts.
     const container = await new MicrocksContainer()
+      .withSnapshots([path.resolve(resourcesDir, "microcks-repository.json")])
       .withMainArtifacts([path.resolve(resourcesDir, "apipastries-openapi.yaml")])
       .withMainRemoteArtifacts(["https://raw.githubusercontent.com/microcks/microcks/master/samples/APIPastry-openapi.yaml"])
       .withSecondaryArtifacts([path.resolve(resourcesDir, "apipastries-postman-collection.json")])
@@ -44,6 +45,20 @@ describe("MicrocksContainer", () => {
 
     let baseGrpcUrl = container.getGrpcMockEndpoint();
     expect("grpc://" + container.getHost() + ":" + container.getMappedPort(9090)).toBe(baseGrpcUrl);
+
+    // Check available services loaded including snapshot.
+    var services = await fetch(container.getHttpEndpoint() + "/api/services");
+    expect(services.status).toBe(200);
+
+    var servicesJson = await services.json();
+    expect(servicesJson.length).toBe(6);
+    var names = servicesJson.map((service: { name: any; }) => service.name);
+    expect(names).toContain("API Pastries");
+    expect(names).toContain("API Pastry - 2.0");
+    expect(names).toContain("HelloService Mock");
+    expect(names).toContain("Movie Graph API");
+    expect(names).toContain("Petstore API");
+    expect(names).toContain("io.github.microcks.grpc.hello.v1.HelloService");
 
     // Get base Url for API Pastries / 0.0.1
     var pastriesUrl = container.getRestMockEndpoint("API Pastries", "0.0.1");

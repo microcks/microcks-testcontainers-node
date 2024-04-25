@@ -21,6 +21,7 @@ export class MicrocksContainer extends GenericContainer {
   static readonly MICROCKS_HTTP_PORT = 8080;
   static readonly MICROCKS_GRPC_PORT = 9090;
   
+  private snapshots: string[] = [];
   private mainArtifacts: string[] = [];
   private secondaryArtifacts: string[] = [];
   private mainRemoteArtifacts: string[] = [];
@@ -78,6 +79,17 @@ export class MicrocksContainer extends GenericContainer {
   }
 
   /**
+   * Provide paths to local repository snapshots that will be imported within the Microcks container
+   * once it will be started and healthy.
+   * @param {[String]} snapshots A set of repository snapshots that will be loaded as classpath resources
+   * @return this
+   */
+  public withSnapshots(snapshots: string[]): this {
+    this.snapshots = this.snapshots.concat(snapshots);
+    return this;
+  }
+
+  /**
    * Provide Secret that should be imported in Microcks after startup.
    * @param {[Secret]} secret The description of a secret to access remote Git repository, test endpoint or broker.
    * @returns this
@@ -97,6 +109,10 @@ export class MicrocksContainer extends GenericContainer {
 
   public override async start(): Promise<StartedMicrocksContainer> {
     let startedContainer = new StartedMicrocksContainer(await super.start());
+    // Load snapshots before anything else.
+    for (let i=0; i<this.snapshots.length; i++) {
+      await startedContainer.importSnapshot(this.snapshots[i]);
+    }
     // Load remote artifacts before local ones.
     for (let i=0; i<this.mainRemoteArtifacts.length; i++) {
       await startedContainer.downloadAsMainArtifact(this.mainRemoteArtifacts[i]);
@@ -273,12 +289,21 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
   }
 
   /**
-   * IDownload a remote artifact as a secondary one within the Microcks container.
+   * Download a remote artifact as a secondary one within the Microcks container.
    * @param {String} remoteArtifactUrl The URL to remote artifact (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
    * @returns Success or error via Promise
    */
   public async downloadAsSecondaryArtifact(remoteArtifactUrl: string): Promise<void> {
     return this.downloadArtifact(remoteArtifactUrl, false);
+  }
+
+  /**
+   * Import a repository snapshot within the Microcks container.
+   * @param {String} snapshotPath The file path to a snapshot
+   * @returns Success or error via Promise
+   */
+  public async importSnapshot(snapshotPath: string): Promise<void> {
+    return this.importSnapshotInternal(snapshotPath);
   }
 
   /**
@@ -343,37 +368,9 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
       throw new Error(`Artifact ${artifactPath}  does not exist or can't be read`);
     }
 
-    // Initialize delimiters items and multiparBody.
-    var crlf = "\r\n",
-        boundaryKey = Math.random().toString(16),
-        boundary = `--${boundaryKey}`,
-        delimeter = `${crlf}--${boundary}`,
-        closeDelimeter = `${delimeter}--`,
-        multipartBody;
-
-    const filename = path.basename(artifactPath);
-    const disposition = `Content-Disposition: form-data; name="file"; filename="${filename}"` + crlf;
-
-    const artifactContent = await readFile(artifactPath);
-    multipartBody = Buffer.concat([
-        Buffer.from(delimeter + crlf + disposition + crlf),
-        artifactContent,
-        Buffer.from(closeDelimeter)]
-    );
-  
-    // Prepare headers with content type and length.
-    const headers: Record<string, string> = {
-      'Content-Type': 'multipart/form-data; boundary=' + boundary,
-      'Content-Length': multipartBody.length.toString(),
-    }
-    const uploadURI = this.getHttpEndpoint() + "/api/artifact/upload" + (mainArtifact ? "" : "?mainArtifact=false");
-
     // Actually upload the file to upload endpoint.
-    const response = await fetch(uploadURI, {
-      method: 'POST',
-      body: multipartBody,
-      headers: headers,
-    });
+    const uploadURI = this.getHttpEndpoint() + "/api/artifact/upload" + (mainArtifact ? "" : "?mainArtifact=false");
+    const response = await this.uploadFileToMicrocks(uploadURI, artifactPath, "application/octet-stream");
 
     if (response.status != 201) {
       throw new Error("Artifact has not been correctly been imported: " + await response.json());
@@ -401,6 +398,55 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
     if (response.status != 201) {
       throw new Error("Artifact has not been correctly downloaded: " + await response.json());
     }
+  }
+
+  private async importSnapshotInternal(snapshotPath: string): Promise<void> {
+    const isFile = await this.isFile(snapshotPath);
+    if (!isFile) {
+      throw new Error(`Snapshot ${snapshotPath}  does not exist or can't be read`);
+    }
+
+    // Actually upload the file to upload endpoint.
+    const response = await this.uploadFileToMicrocks(this.getHttpEndpoint() + "/api/import", snapshotPath, "application/json");
+
+    if (response.status != 201) {
+      throw new Error("Snapshot has not been correctly been imported: " + await response.json());
+    }
+  }
+
+  private async uploadFileToMicrocks(microcksApiURL: string, filePath: string, contentType: string): Promise<Response> {
+    // Initialize delimiters items and multiparBody.
+    var crlf = "\r\n",
+        boundaryKey = Math.random().toString(16),
+        boundary = `--${boundaryKey}`,
+        delimeter = `${crlf}--${boundary}`,
+        closeDelimeter = `${delimeter}--`,
+        multipartBody;
+
+    const filename = path.basename(filePath);
+    const disposition = `Content-Disposition: form-data; name="file"; filename="${filename}"` + crlf;
+
+    const content = await readFile(filePath);
+    multipartBody = Buffer.concat([
+        Buffer.from(delimeter + crlf + disposition),
+        Buffer.from(`Content-Type: ${contentType}` + crlf),
+        Buffer.from("Content-Transfer-Encoding: binary" + crlf + crlf),
+        content,
+        Buffer.from(closeDelimeter)]
+    );
+
+    // Prepare headers with content type and length.
+    const headers: Record<string, string> = {
+      'Content-Type': 'multipart/form-data; boundary=' + boundary,
+      'Content-Length': multipartBody.length.toString(),
+    }
+
+    // Actually upload the file to upload endpoint.
+    return fetch(microcksApiURL, {
+      method: 'POST',
+      body: multipartBody,
+      headers: headers,
+    });
   }
 
   private refreshTestResult(testResultId: string): Promise<TestResult> {

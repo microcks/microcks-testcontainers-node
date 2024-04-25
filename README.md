@@ -67,6 +67,19 @@ await container.importAsSecondaryArtifact(path.resolve(resourcesDir, "apipastrie
 
 Please refer to our [MicrocksContainerTest](https://github.com/microcks/microcks-testcontainers-node/blob/src/microcks-container.test.ts) for comprehensive example on how to use it.
 
+Starting with version `0.2.4` you can also import full 
+[repository snapshots](https://microcks.io/documentation/administrating/snapshots/) at once:
+
+```ts
+import * as path from "path";
+
+const resourcesDir = path.resolve(__dirname, "..", "test-resources");
+
+const container = await new MicrocksContainer()
+    .withSnapshots([path.resolve(resourcesDir, "microcks-repository.json")])
+    .start();
+```
+
 ### Using mock endpoints for your dependencies
 
 During your test setup, you'd probably need to retrieve mock endpoints provided by Microcks containers to 
