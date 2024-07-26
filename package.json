@@ -1,6 +1,6 @@
 {
   "name": "@microcks/microcks-testcontainers",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "author": "Laurent Broudoux <laurent@microcks.io>",
   "description": "Node/TypeScript library for Testcontainers that enables embedding Microcks into your unit tests with lightweight, throwaway instance thanks to containers",
   "bugs": {
@@ -22,11 +22,11 @@
     "test": "cross-env DEBUG=testcontainers* jest"
   },
   "dependencies": {
-    "testcontainers": "^10.8.2"
+    "testcontainers": "^10.10.4"
   },
   "devDependencies": {
     "@aws-sdk/client-sqs": "3.398.0",
-    "@testcontainers/localstack": "^10.8.2",
+    "@testcontainers/localstack": "^10.10.4",
     "@types/jest": "^29.5.3",
     "@types/ws": "^8.5.10",
     "cross-env": "^7.0.3",
