@@ -18,10 +18,12 @@ import * as path from "path";
 import { CreateQueueCommand, ListQueuesCommand, ReceiveMessageCommand, SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { GenericContainer, Network, Wait } from "testcontainers";
 import { LocalstackContainer } from "@testcontainers/localstack";
+import { RabbitMQContainer } from "@testcontainers/rabbitmq";
 import { MicrocksContainersEnsemble } from "./microcks-containers-ensemble";
 import { TestRequest, TestResult, TestRunnerType } from "./microcks-container";
 import { WebSocket } from "ws";
 import mqtt from "mqtt"; 
+import amqp from "amqplib";
 
 describe("MicrocksContainersEnsemble", () => {
   jest.setTimeout(180_000);
@@ -267,9 +269,65 @@ describe("MicrocksContainersEnsemble", () => {
       expect(message).toBe(expectedMessage);
     });
 
-    // Noew stop the ensemble, the container and the network.
+    // Now stop the ensemble, the container and the network.
     await ensemble.stop();
     await artemis.stop();
+    await network.stop();
+  });
+  // }
+
+  // start and mock async MQTT {
+  it("should start, load artifacts and mock async AMQP", async () => {
+    const network = await new Network().start();
+
+    // Start ensemble, load artifacts and start other containers.
+    const rabbitmq = await new RabbitMQContainer("rabbitmq:3.9.13-management-alpine")
+      .withNetwork(network)
+      .withNetworkAliases("rabbitmq")
+      .start();
+
+    var { output, exitCode } = await rabbitmq.exec(["rabbitmqctl", "add_user", "test", "test"]);
+    var { output, exitCode } = await rabbitmq.exec(["rabbitmqctl", "set_permissions", "-p", "/", "test", ".*", ".*", ".*"]);
+
+    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:nightly-native")
+      .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
+      .withAsyncFeature()
+      .withAMQPConnection({server: 'rabbitmq:5672', username: 'test', password: 'test'})
+      .start();
+
+    // Initialize messages list and connect to mock endpoint.
+    let messages: string[] = [];
+    let amqpDestination = ensemble.getAsyncMinionContainer()?.getAMQPMockDestination("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders");
+    let expectedMessage = "{\"id\":\"4dab240d-7847-4e25-8ef3-1530687650c8\",\"customerId\":\"fe1088b3-9f30-4dc1-a93d-7b74f0a072b9\",\"status\":\"VALIDATED\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}";
+
+    const conn = await amqp.connect('amqp://test:test@localhost:' + rabbitmq.getMappedPort(5672));
+    const channel = await conn.createChannel();
+
+    await delay(500);
+    //await channel.checkExchange(amqpDestination as string);
+    await channel.assertQueue('microcks-test', { durable: false });
+    await channel.bindQueue('microcks-test', amqpDestination as string, '');
+    
+    channel.consume('microcks-test', (msg: any) => {
+      if (msg !== null) {
+        messages.push(msg.content.toString());
+      }
+    });
+
+    // Wait 7 seconds for messages from Async Minion to send at least 2 messages.
+    await delay(7000);
+
+    channel.close();
+    conn.close();
+
+    expect(messages.length).toBeGreaterThan(0);
+    messages.forEach(message => {
+      expect(message).toBe(expectedMessage);
+    });
+
+    // Now stop the ensemble, the container and the network.
+    await ensemble.stop();
+    await rabbitmq.stop();
     await network.stop();
   });
   // }

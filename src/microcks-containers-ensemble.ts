@@ -93,6 +93,19 @@ export class MicrocksContainersEnsemble {
   }
 
   /**
+   * Once the Async Feature is enabled, connects to a AMQP broker.
+   * @param {GenericConnection} connection Connection details to a MQTT broker.
+   * @returns this
+   */
+  public withAMQPConnection(connection: GenericConnection): this {
+    if (this.asyncMinionContainer == undefined) {
+      throw new Error('Async feature must have been enabled first');
+    }
+    this.asyncMinionContainer?.withAMQPConnection(connection);
+    return this;
+  }
+
+  /**
    * Once the Async Feature is enabled, connects to an Amazon SQS service.
    * @param {AmazonServiceConnection} connection Connection details to an Amazon SQS service.
    * @returns this
