@@ -50,6 +50,22 @@ export class MicrocksAsyncMinionContainer extends GenericContainer {
   }
 
   /**
+   * Connect the MicrocksAsyncMinionContainer to a MQTT server to allow MQTT messages mocking.
+   * @param {GenericConnection} connection Connection details to a MQTT broker.
+   * @returns  this
+   */
+  public withMQTTConnection(connection: GenericConnection): this {
+    this.addProtocolIfNeeded('MQTT');
+    this.withEnvironment({
+      ASYNC_PROTOCOLS: this.extraProtocols,
+      MQTT_SERVER: connection.server,
+      MQTT_USERNAME: connection.username,
+      MQTT_PASSWORD: connection.password
+    });
+    return this;
+  }
+
+  /**
    * Connect the MicrocksAsyncMinionContainer to an Amazon SQS service to allow SQS messages mocking.
    * @param {AmazonServiceConnection} connection Connection details to an Amazon SQS service.
    * @returns this
@@ -143,6 +159,21 @@ export class StartedMicrocksAsyncMinionContainer extends AbstractStartedContaine
   }
 
   /**
+   * Get the exposed mock endpoints for a MQTT Service.
+   * @param {String} service The name of Service/API
+   * @param {String} version The version of Service/API
+   * @param {String} operationName The name of operation to get the endpoint for
+   * @returns  A usable endpoint to interact with Microcks mocks.
+   */
+  public getMQTTMockTopic(service: string, version: string, operationName: string): string {
+      // operationName may start with SUBSCRIBE or PUBLISH.
+    if (operationName.indexOf(' ') != -1) {
+      operationName = operationName.split(' ')[1];
+    }
+    return `${service.replace(/\s/g, '').replace(/-/g, '')}-${version.replace(/\s/g, '')}-${operationName}`;
+  }
+
+  /**
    * Get the exposed mock endpoints for an Amazon SQS Service.
    * @param {String} service The name of Service/API
    * @param {String} version The version of Service/API
@@ -173,6 +204,12 @@ export class StartedMicrocksAsyncMinionContainer extends AbstractStartedContaine
   }
 }
 
+
+export interface GenericConnection {
+  server: string;
+  username: string;
+  password: string;
+}
 
 export interface KafkaConnection {
   bootstrapServers: string;

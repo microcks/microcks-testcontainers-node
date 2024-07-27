@@ -21,6 +21,7 @@ import { LocalstackContainer } from "@testcontainers/localstack";
 import { MicrocksContainersEnsemble } from "./microcks-containers-ensemble";
 import { TestRequest, TestResult, TestRunnerType } from "./microcks-container";
 import { WebSocket } from "ws";
+import mqtt from "mqtt"; 
 
 describe("MicrocksContainersEnsemble", () => {
   jest.setTimeout(180_000);
@@ -212,6 +213,63 @@ describe("MicrocksContainersEnsemble", () => {
     await ensemble.stop();
     await badImpl.stop();
     await goodImpl.stop();
+    await network.stop();
+  });
+  // }
+
+  // start and mock async MQTT {
+  it("should start, load artifacts and mock async MQTT", async () => {
+    const network = await new Network().start();
+
+    // Start ensemble, load artifacts and start other containers.
+    const artemis = await new GenericContainer("apache/activemq-artemis:2.35.0-alpine")
+      .withNetwork(network)
+      .withNetworkAliases("artemis")
+      .withExposedPorts(1883)
+      .withWaitStrategy(Wait.forLogMessage(/.AMQ221007: Server is now active*/, 1))
+      .start();
+
+    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:nightly-native")
+      .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
+      .withAsyncFeature()
+      .withMQTTConnection({server: 'artemis:1883', username: 'artemis', password: 'artemis'})
+      .start();
+
+    const client = mqtt.connect('mqtt://localhost:' + artemis.getMappedPort(1883), {
+      username: 'artemis',
+      password: 'artemis'
+    });
+
+    // Initialize messages list and connect to mock endpoint.
+    let messages: string[] = [];
+    let mqttTopic = ensemble.getAsyncMinionContainer()?.getMQTTMockTopic("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders");
+    let expectedMessage = "{\"id\":\"4dab240d-7847-4e25-8ef3-1530687650c8\",\"customerId\":\"fe1088b3-9f30-4dc1-a93d-7b74f0a072b9\",\"status\":\"VALIDATED\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}";
+
+    client.on('connect', () => {
+      client.subscribe(mqttTopic as string, (err: any) => {
+        if (!err && err != null) {
+          console.log(err);
+        }
+      })
+    })
+    client.on('error', console.error);
+    client.on('message', (topic: any, message: Buffer) => {
+      messages.push(message.toString());
+    })
+
+    // Wait 7 seconds for messages from Async Minion to send at least 2 messages.
+    await delay(7000);
+
+    client.end(true);
+
+    expect(messages.length).toBeGreaterThan(0);
+    messages.forEach(message => {
+      expect(message).toBe(expectedMessage);
+    });
+
+    // Noew stop the ensemble, the container and the network.
+    await ensemble.stop();
+    await artemis.stop();
     await network.stop();
   });
   // }

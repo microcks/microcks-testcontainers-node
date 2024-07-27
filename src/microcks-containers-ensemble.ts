@@ -15,7 +15,10 @@
  */
 import { GenericContainer, StartedNetwork, StartedTestContainer, StopOptions, Wait } from "testcontainers";
 import { MicrocksContainer, Secret, StartedMicrocksContainer } from "./microcks-container";
-import { AmazonServiceConnection, KafkaConnection, MicrocksAsyncMinionContainer, StartedMicrocksAsyncMinionContainer } from "./microcks-async-minion-container";
+import { 
+  AmazonServiceConnection, GenericConnection, KafkaConnection, 
+  MicrocksAsyncMinionContainer, StartedMicrocksAsyncMinionContainer 
+} from "./microcks-async-minion-container";
 
 export class MicrocksContainersEnsemble {
   private network: StartedNetwork;
@@ -65,7 +68,7 @@ export class MicrocksContainersEnsemble {
 
   /**
    * Once the Async Feature is enabled, connects to a Kafka broker.
-   * @param connection Connection details to a Kafka broker.
+   * @param {KafkaConnection} connection Connection details to a Kafka broker.
    * @returns this
    */
   public withKafkaConnection(connection: KafkaConnection): this {
@@ -73,6 +76,19 @@ export class MicrocksContainersEnsemble {
       throw new Error('Async feature must have been enabled first');
     }
     this.asyncMinionContainer?.withKafkaConnection(connection);
+    return this;
+  }
+
+  /**
+   * Once the Async Feature is enabled, connects to a MQTT broker.
+   * @param {GenericConnection} connection Connection details to a MQTT broker.
+   * @returns this
+   */
+  public withMQTTConnection(connection: GenericConnection): this {
+    if (this.asyncMinionContainer == undefined) {
+      throw new Error('Async feature must have been enabled first');
+    }
+    this.asyncMinionContainer?.withMQTTConnection(connection);
     return this;
   }
 
