@@ -8,6 +8,7 @@ Want to see this extension in action? Check out our [sample application](https:/
 [![Version](https://img.shields.io/npm/v/@microcks/microcks-testcontainers?color=blue&style=for-the-badge)](https://www.npmjs.com/package/@microcks/microcks-testcontainers)
 [![License](https://img.shields.io/github/license/microcks/microcks-testcontainers-java?style=for-the-badge&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Project Chat](https://img.shields.io/badge/discord-microcks-pink.svg?color=7289da&style=for-the-badge&logo=discord)](https://microcks.io/discord-invite/)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-node.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-node?ref=badge_shield)
 
 ## Build Status
 
@@ -257,3 +258,7 @@ let testResultPromise: Promise<TestResult> = ensemble.getMicrocksContainer().tes
 let testResult = await testResultPromise;
 expect(testResult.success).toBe(true);
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-node.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmicrocks%2Fmicrocks-testcontainers-node?ref=badge_large)
