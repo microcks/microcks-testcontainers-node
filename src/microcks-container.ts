@@ -28,7 +28,7 @@ export class MicrocksContainer extends GenericContainer {
   private secondaryRemoteArtifacts: string[] = [];
   private secrets: Secret[] = [];
 
-  constructor(image = "quay.io/microcks/microcks-uber:1.9.0") {
+  constructor(image = "quay.io/microcks/microcks-uber:1.10.0") {
     super(image);
     this.withExposedPorts(MicrocksContainer.MICROCKS_HTTP_PORT, MicrocksContainer.MICROCKS_GRPC_PORT)
         .withWaitStrategy(Wait.forLogMessage(/.*Started MicrocksApplication.*/, 1));

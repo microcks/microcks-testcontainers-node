@@ -276,7 +276,7 @@ describe("MicrocksContainersEnsemble", () => {
   });
   // }
 
-  // start and mock async MQTT {
+  // start and mock async AMQP {
   it("should start, load artifacts and mock async AMQP", async () => {
     const network = await new Network().start();
 
@@ -362,7 +362,7 @@ describe("MicrocksContainersEnsemble", () => {
     })
     await client.send(createCommand);
 
-    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:1.9.0-native")
+    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:1.10.0-native")
       .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
       .withAsyncFeature()
       .withAmazonSQSConnection({
