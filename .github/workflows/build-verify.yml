@@ -19,7 +19,7 @@ jobs:
     environment: Build
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set Node.js 18.x
         uses: actions/setup-node@v3
