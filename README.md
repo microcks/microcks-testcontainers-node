@@ -59,7 +59,7 @@ const container = await new MicrocksContainer().start();
 ### Import content in Microcks
 
 To use Microcks mocks or contract-testing features, you first need to import OpenAPI, Postman Collection, GraphQL or gRPC artifacts. 
-Artifacts can be imported as main/Primary ones or as secondary ones. See [Multi-artifacts support](https://microcks.io/documentation/using/importers/#multi-artifacts-support) for details.
+Artifacts can be imported as main/Primary ones or as secondary ones. See [Multi-artifacts support](https://microcks.io/documentation/explanations/multi-artifacts/) for details.
 
 You can do it before starting the container using arrays of paths:
 
@@ -86,10 +86,10 @@ await container.importAsMainArtifact(path.resolve(resourcesDir, "apipastries-ope
 await container.importAsSecondaryArtifact(path.resolve(resourcesDir, "apipastries-postman-collection.json"));
 ```
 
-Please refer to our [MicrocksContainerTest](https://github.com/microcks/microcks-testcontainers-node/blob/src/microcks-container.test.ts) for comprehensive example on how to use it.
+Please refer to our [MicrocksContainerTest](https://github.com/microcks/microcks-testcontainers-node/blob/main/src/microcks-container.test.ts) for comprehensive example on how to use it.
 
 Starting with version `0.2.4` you can also import full 
-[repository snapshots](https://microcks.io/documentation/administrating/snapshots/) at once:
+[repository snapshots](https://microcks.io/documentation/guides/administration/snapshots/) at once:
 
 ```ts
 import * as path from "path";
@@ -204,7 +204,7 @@ await microcks.importAsMainArtifact(...);
   .on("end", () => console.log("Stream closed"));
 ```
 
-Please refer to our [MicrocksContainersEnsembleTest](https://github.com/microcks/microcks-testcontainers-node/blob/src/microcks-containers-ensemble.test.ts) for comprehensive example on how to use it.
+Please refer to our [MicrocksContainersEnsembleTest](https://github.com/microcks/microcks-testcontainers-node/blob/main/src/microcks-containers-ensemble.test.ts) for comprehensive example on how to use it.
 
 #### Postman contract-testing
 
