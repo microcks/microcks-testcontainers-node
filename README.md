@@ -177,9 +177,9 @@ The `MicrocksContainer` referenced above supports essential features of Microcks
 * Mocking and contract-testing of GraphQL APIs,
 * Mocking and contract-testing of gRPC APIs.
 
-To support features like `POSTMAN` contract-testing, we introduced MicrocksContainersEnsemble that allows managing additional Microks services. MicrocksContainersEnsemble allow you to implement [Different levels of API contract testing](https://medium.com/@lbroudoux/different-levels-of-api-contract-testing-with-microcks-ccc0847f8c97) in the Inner Loop with Testcontainers!
+To support features like `POSTMAN` contract-testing, we introduced MicrocksContainersEnsemble that allows managing additional Microcks services. MicrocksContainersEnsemble allow you to implement [Different levels of API contract testing](https://medium.com/@lbroudoux/different-levels-of-api-contract-testing-with-microcks-ccc0847f8c97) in the Inner Loop with Testcontainers!
 
-A `MicrocksContainersEnsemble` conforms to Testcontaierns lifecycle methods and presents roughly the same interface as a `MicrocksContainer`. To You can create and build an ensemble that way after having initialized a `Network`:
+A `MicrocksContainersEnsemble` conforms to Testcontainers lifecycle methods and presents roughly the same interface as a `MicrocksContainer`. You can create and build an ensemble that way after having initialized a `Network`:
 
 ```ts
 import { Network } from "testcontainers";
