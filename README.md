@@ -13,9 +13,9 @@ Want to see this extension in action? Check out our [sample application](https:/
 
 ## Build Status
 
-Latest released version is `0.2.5`.
+Latest released version is `0.2.6`.
 
-Current development version is `0.2.6`.
+Current development version is `0.2.7`.
 
 #### Fossa license and security scans
 
