@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": true,
+    "target": "es2022",
+    "module": "es2022",
+    "outDir": "build-test"
+  },
+  "include": [
+    "src/**/*.test.ts",
+    "src/**/*.d.ts"
+  ]
+}

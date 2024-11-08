@@ -135,6 +135,30 @@ export class MicrocksContainer extends GenericContainer {
   }
 }
 
+export enum OAuth2GrantType {
+  PASSWORD = "PASSWORD",
+  CLIENT_CREDENTIALS = "CLIENT_CREDENTIALS",
+  REFRESH_TOKEN = "REFRESH_TOKEN"
+}
+
+export interface OAuth2ClientContext {
+  clientId: string;
+  clientSecret?: string;
+  tokenUri: string;
+  scopes?: string;
+  username?: string;
+  password?: string;
+  refreshToken?: string;
+  grantType: OAuth2GrantType;
+}
+
+export interface OAuth2AuthorizedClient {
+  grantType: OAuth2GrantType;
+  principalName: string;
+  tokenUri: string;
+  scopes?: string;
+}
+
 export interface TestRequest {
   serviceId: string;
   testEndpoint: string;
@@ -143,6 +167,7 @@ export interface TestRequest {
   secretName?: string;
   filteredOperations?: string[];
   operationsHeaders?: any;
+  oAuth2Context?: OAuth2ClientContext;
 }
 
 export interface Secret {
@@ -175,6 +200,7 @@ export interface TestResult {
   operationHeaders: any;
   testCaseResults: TestCaseResult[];
   secretRef: SecretRef;
+  authorizedClient?: OAuth2AuthorizedClient;
 }
 
 export interface TestCaseResult {

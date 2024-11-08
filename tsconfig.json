@@ -17,6 +17,7 @@
   },
   "exclude": [
     "build",
-    "jest.config.ts"
+    "jest.config.ts",
+    "src/**/*.test.ts"
   ]
 }

@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 import * as path from "path";
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 
+import { jest } from '@jest/globals'
 import { GenericContainer, Network, Wait } from "testcontainers";
-import { MicrocksContainer, TestRequest, TestRunnerType } from "./microcks-container";
+import { MicrocksContainer, TestRequest, TestRunnerType, OAuth2GrantType } from "./microcks-container";
+
+import KeycloakContainer from 'keycloak-testcontainer';
 
 describe("MicrocksContainer", () => {
   jest.setTimeout(180_000);
 
+  const __dirname = dirname(fileURLToPath(import.meta.url));
   const resourcesDir = path.resolve(__dirname, "..", "test-resources");
 
   // start and mock {
@@ -140,6 +146,58 @@ describe("MicrocksContainer", () => {
     // Now stop the containers and the network.
     await container.stop();
     await badImpl.stop();
+    await goodImpl.stop();
+    await network.stop();
+  });
+  // }
+
+  // start and contract test with OAuth2 context{
+  it("should start, load artifacts and contract test mock with OAuth2 context", async () => {
+    const network = await new Network().start();
+
+    // Start microcks container and other containers.
+    const container = await new MicrocksContainer().withNetwork(network).start();
+    const keycloak = await new KeycloakContainer()
+        .withNetwork(network)
+        .withNetworkAliases("keycloak")
+        .withRealmImport(path.resolve(resourcesDir, "realm"))
+        .start();
+    const goodImpl = await new GenericContainer("quay.io/microcks/contract-testing-demo:02")
+        .withNetwork(network)
+        .withNetworkAliases("good-impl")
+        .withWaitStrategy(Wait.forLogMessage("Example app listening on port 3002", 1))
+        .start();
+
+    await container.importAsMainArtifact(path.resolve(resourcesDir, "apipastries-openapi.yaml"));
+
+    var testRequest: TestRequest = {
+      serviceId: "API Pastries:0.0.1",
+      runnerType: TestRunnerType.OPEN_API_SCHEMA,
+      testEndpoint: "http://good-impl:3002",
+      timeout: 3000,
+      oAuth2Context: {
+        clientId: "myrealm-serviceaccount",
+        clientSecret: "ab54d329-e435-41ae-a900-ec6b3fe15c54",
+        tokenUri: "http://keycloak:8080/realms/myrealm/protocol/openid-connect/token",
+        grantType: OAuth2GrantType.CLIENT_CREDENTIALS
+      }
+    }
+    var testResult = await container.testEndpoint(testRequest);
+
+    expect(testResult.success).toBe(true);
+    expect(testResult.testedEndpoint).toBe("http://good-impl:3002");
+    expect(testResult.testCaseResults.length).toBe(3);
+    expect(testResult.testCaseResults[0].testStepResults[0].message).toBe("");
+
+    // Ensure test has used a valid OAuth2 client.
+    expect(testResult.authorizedClient).toBeDefined();
+    expect(testResult.authorizedClient?.principalName).toBe("myrealm-serviceaccount");
+    expect(testResult.authorizedClient?.tokenUri).toBe("http://keycloak:8080/realms/myrealm/protocol/openid-connect/token");
+    expect(testResult.authorizedClient?.scopes).toBe("openid profile email");
+
+    // Now stop the containers and the network.
+    await container.stop();
+    await keycloak.stop();
     await goodImpl.stop();
     await network.stop();
   });
