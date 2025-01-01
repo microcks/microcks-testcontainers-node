@@ -229,6 +229,54 @@ export enum TestRunnerType {
   GRAPHQL_SCHEMA = "GRAPHQL_SCHEMA"
 }
 
+export interface MicrocksHeader {
+  name: string;
+  values: string[];
+}
+export interface MicrocksParameter {
+  name: string;
+  value: string;
+}
+
+export interface Message {
+  name: string;
+  content: string;
+  operationId: string;
+  testCaseId: string;
+  sourceArtifact: string;
+  headers: MicrocksHeader[];
+}
+
+export interface MicrocksRequest extends Message {
+  id: string;
+  responseId: string;
+  queryParameters: MicrocksParameter[];
+}
+
+export interface MicrocksResponse extends Message {
+  id: string;
+  status: string;
+  mediaType: string;
+  dispatchCriteria: string;
+  isFault: boolean;
+}
+
+export interface EventMessage extends Message {
+  id: string;
+  mediaType: string;
+  dispatchCriteria: string;
+}
+
+export interface RequestResponsePair {
+  request: MicrocksRequest;
+  response: MicrocksResponse;
+}
+
+export interface UnidirectionalEvent {
+  eventMessage: EventMessage;
+}
+
+
 export class StartedMicrocksContainer extends AbstractStartedContainer {
   private readonly httpPort: number;
   private readonly grpcPort: number;
@@ -387,6 +435,56 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
     throw new Error("Couldn't launch on new test on Microcks. Please check Microcks container logs.");
   }
 
+  /**
+   * Retrieve messages exchanged during a test on an endpoint.
+   * @param {TestResult} testResult The TestResult containing information on success/failure as well as details on test cases.
+   * @param {string} operationName The name of the operation to get messages corresponding to test case
+   * @returns A list of RequestResponsePairs containing the request/response of test
+   */
+  public async getMessagesForTestCase(testResult: TestResult, operationName: string): Promise<RequestResponsePair[]> {
+    // Build the test case identfier.
+    const operation = this.encode(operationName)
+    const testCaseId = `${testResult.id}-${testResult.testNumber}-${operation}`;
+    // Request the test case messages.
+    const response = await fetch(this.getHttpEndpoint() + "/api/tests/" + testResult.id + "/messages/" + testCaseId, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      },
+    });
+
+    if (response.status == 200) {
+      const responseJson = await response.json();
+      return responseJson as RequestResponsePair[];
+    }
+    throw new Error("Couldn't retrieve messages on test on Microcks. Please check Microcks container logs");
+  }
+
+  /**
+   * Retrieve event messages received during a test on an endpoint.
+   * @param {TestResult} testResult The TestResult containing information on success/failure as well as details on test cases.
+   * @param {string} operationName The name of the operation to get messages corresponding to test case
+   * @returns A list of RequestResponsePairs containing the request/response of test
+   */
+  public async getEventMessagesForTestCase(testResult: TestResult, operationName: string): Promise<UnidirectionalEvent[]> {
+    // Build the test case identfier.
+    const operation = this.encode(operationName)
+    const testCaseId = `${testResult.id}-${testResult.testNumber}-${operation}`;
+    // Request the test case event messages.
+    const response = await fetch(this.getHttpEndpoint() + "/api/tests/" + testResult.id + "/events/" + testCaseId, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      },
+    });
+
+    if (response.status == 200) {
+      const responseJson = await response.json();
+      return responseJson as UnidirectionalEvent[];
+    }
+    throw new Error("Couldn't retrieve event messages on test on Microcks. Please check Microcks container logs");
+  }
+
   
   private async importArtifact(artifactPath: string, mainArtifact: boolean): Promise<void> {
     const isFile = await this.isFile(artifactPath);
@@ -495,5 +593,10 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
       //console.log(`Waiting for ${ms} ms`);
       setTimeout(resolve, ms);
     });
+  }
+
+  private encode(operation: string): string {
+    operation = operation.replace(/\//g, '!');
+    return encodeURIComponent(operation);
   }
 }

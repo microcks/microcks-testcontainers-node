@@ -198,6 +198,21 @@ describe("MicrocksContainersEnsemble", () => {
     expect(testResult.testCaseResults.length).toBeGreaterThan(0);
     expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("object has missing required properties");
 
+    // Retrieve event messages for the failing test case.
+    const events = await ensemble.getMicrocksContainer().getEventMessagesForTestCase(testResult, 
+      "SUBSCRIBE pastry/orders");
+
+    // We should have at least 1 event.
+    expect(events.length).toBeGreaterThan(0);
+    events.forEach(message => {
+      expect(message.eventMessage).not.toBeNull();
+      expect(message.eventMessage.content).not.toBeNull();
+
+      // Check these are the correct content.
+      const content = JSON.parse(message.eventMessage.content);
+      expect(content['productQuantities'].length).toBe(2);
+    });
+
     testRequest = {
       serviceId: "Pastry orders API:0.1.0",
       runnerType: TestRunnerType.ASYNC_API_SCHEMA,
@@ -341,7 +356,7 @@ describe("MicrocksContainersEnsemble", () => {
     const network = await new Network().start();
 
     // Start ensemble, load artifacts and start other containers.
-    const localstack = await new LocalstackContainer("localstack/localstack:latest")
+    const localstack = await new LocalstackContainer("localstack/localstack:4.0.3")
       .withNetwork(network)
       .withNetworkAliases("localstack")
       .withEnvironment({
@@ -426,7 +441,7 @@ describe("MicrocksContainersEnsemble", () => {
     const network = await new Network().start();
 
     // Start ensemble, load artifacts and start other containers.
-    const localstack = await new LocalstackContainer("localstack/localstack:latest")
+    const localstack = await new LocalstackContainer("localstack/localstack:4.0.3")
       .withNetwork(network)
       .withNetworkAliases("localstack")
       .start();
@@ -499,6 +514,9 @@ describe("MicrocksContainersEnsemble", () => {
 
     expect(testResult.success).toBe(false);
     expect(testResult.testedEndpoint).toBe("sqs://us-east-1/pastry-orders?overrideUrl=http://localstack:4566");
+
+    console.log("TestResult: " + JSON.stringify(testResult));
+
     expect(testResult.testCaseResults.length).toBeGreaterThan(0);
     expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("object has missing required properties");
     testResult.testCaseResults.forEach(tcr => {

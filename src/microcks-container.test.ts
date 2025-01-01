@@ -130,6 +130,19 @@ describe("MicrocksContainer", () => {
     expect(testResult.testCaseResults.length).toBe(3);
     expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("object has missing required properties");
 
+    // Retrieve messages for the failing test case.
+    const messages = await container.getMessagesForTestCase(testResult, "GET /pastries");
+    expect(messages.length).toBe(3);
+    messages.forEach(message => {
+      expect(message.request).not.toBeNull();
+      expect(message.response).not.toBeNull();
+      expect(message.request.content).not.toBeNull();
+      // Check these are the correct requests.
+      expect(message.request.queryParameters).not.toBeNull();
+      expect(message.request.queryParameters.length).toBe(1);
+      expect(message.request.queryParameters[0].name).toBe('size');
+    });
+
     testRequest = {
       serviceId: "API Pastries:0.0.1",
       runnerType: TestRunnerType.OPEN_API_SCHEMA,

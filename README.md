@@ -15,7 +15,7 @@ Want to see this extension in action? Check out our [sample application](https:/
 
 Latest released version is `0.2.6`.
 
-Current development version is `0.2.7`.
+Current development version is `0.3.0`.
 
 #### Fossa license and security scans
 
@@ -139,6 +139,8 @@ expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("obje
 ```
 
 The `TestResult` gives you access to all details regarding success of failure on different test cases.
+
+In addition, you can use the `getMessagesForTestCase()` method to retrieve the messages exchanged during the test.
 
 A comprehensive NestJS demo application illustrating both usages is available here: [nest-order-service](https://github.com/microcks/api-lifecycle/tree/master/shift-left-demo/nest-order-service).
 
@@ -278,3 +280,5 @@ let testResultPromise: Promise<TestResult> = ensemble.getMicrocksContainer().tes
 let testResult = await testResultPromise;
 expect(testResult.success).toBe(true);
 ```
+
+In addition, you can use the `getEventMessagesForTestCase()` method to retrieve the events received during the test.
