@@ -115,6 +115,22 @@ The container provides methods for different supported API styles/protocols (Soa
 
 The container also provides `getHttpEndpoint()` for raw access to those API endpoints.
 
+### Verifying mock endpoint has been invoked
+
+Once the mock endpoint has been invoked, you'd probably need to ensure that the mock have been really invoked.
+
+You can do it like this :
+
+```ts
+expect(await container.verify("API Pastries", "0.0.1")).toBe(true);
+```
+
+Or like this :
+
+```ts
+const serviceInvocationsCount: number = await container.getServiceInvocationsCount("API Pastries", "0.0.1");
+```
+
 ### Launching new contract-tests
 
 If you want to ensure that your application under test is conformant to an OpenAPI contract (or many contracts),

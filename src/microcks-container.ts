@@ -276,6 +276,17 @@ export interface UnidirectionalEvent {
   eventMessage: EventMessage;
 }
 
+export interface DailyInvocationStatistic {
+  id: string;
+  day: string;
+  serviceName: string;
+  serviceVersion: string;
+  dailyCount: number;
+
+  hourlyCount: {string: number};
+  minuteCount: {string: number};
+}
+
 
 export class StartedMicrocksContainer extends AbstractStartedContainer {
   private readonly httpPort: number;
@@ -485,6 +496,37 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
     throw new Error("Couldn't retrieve event messages on test on Microcks. Please check Microcks container logs");
   }
 
+  /**
+   * Verifies that given Service has been invoked at least one time, for the given invocations' date (current date if undefined)
+   * @param {string} serviceName The name of the service to verify invocation for
+   * @param {string} serviceVersion The version of the service to verify invocation for
+   * @param {Date} invocationDate The date to verify invocation for (optional)
+   * @returns true if this service has been invoked at least one time
+   */
+  public async verify(serviceName: string, serviceVersion: string, invocationDate?: Date): Promise<boolean> {
+    const invocationStats = await this.getServiceInvocations(serviceName, serviceVersion, invocationDate);
+    if (invocationStats == null) {
+      return false;
+    }
+    const count = invocationStats.dailyCount;
+    return count != null && count > 0;
+  }
+
+  /**
+   * Get the invocations' count for a given service, identified by its name and version, for the given invocations' date (current date if undefined)
+   * @param {string} serviceName The name of the service to get invocations count for
+   * @param {string} serviceVersion The version of the service to get invocations count for
+   * @param {Date} invocationDate The date to get invocations count for (optional)
+   * @returns The number of invocation of this service for given or current date
+   */
+  public async getServiceInvocationsCount(serviceName: string, serviceVersion: string, invocationDate?: Date): Promise<number> {
+    const invocationStats = await this.getServiceInvocations(serviceName, serviceVersion, invocationDate);
+    if (invocationStats == null) {
+      return 0;
+    }
+    return invocationStats.dailyCount;
+  }
+
   
   private async importArtifact(artifactPath: string, mainArtifact: boolean): Promise<void> {
     const isFile = await this.isFile(artifactPath);
@@ -583,6 +625,30 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
       })
   }
 
+  private async getServiceInvocations(serviceName: string, serviceVersion: string, invocationDate?: Date): Promise<DailyInvocationStatistic> {
+    var endpointUrl = `${this.getHttpEndpoint()}/api/metrics/invocations/${encodeURIComponent(serviceName)}/${encodeURIComponent(serviceVersion)}`;
+    if (invocationDate != undefined && invocationDate != null) {
+      endpointUrl = `${endpointUrl}?day=${this.formatDate(invocationDate)}` ;
+    }
+
+    // Tto avoid race condition issue while Microcks server is processing metrics asynchronously.
+    await this.wait(100);
+    
+    // Request the daily statistics.
+    const response = await fetch(endpointUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      },
+    });
+
+    if (response.status == 200) {
+      const responseJson = await response.json();
+      return responseJson as DailyInvocationStatistic;
+    }
+    throw new Error("Couldn't get service's invocations on Microcks. Please check Microcks container logs");
+  }
+
   private async isFile(path: string): Promise<boolean> {  
     const stats = await stat(path);
     return stats.isFile()
@@ -598,5 +664,11 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
   private encode(operation: string): string {
     operation = operation.replace(/\//g, '!');
     return encodeURIComponent(operation);
+  }
+
+  private formatDate(invocationDate: Date): string {
+    const month = invocationDate.getMonth() < 10 ? `0${invocationDate.getMonth()}` : `${invocationDate.getMonth()}`
+    const day = invocationDate.getDate() < 10 ? `0${invocationDate.getDate()}` : `${invocationDate.getDate()}`;
+    return `${invocationDate.getFullYear()}${month}${day}`;
   }
 }

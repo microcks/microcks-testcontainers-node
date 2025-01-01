@@ -19,7 +19,7 @@ import { fileURLToPath } from 'url';
 
 import { jest } from '@jest/globals'
 import { GenericContainer, Network, Wait } from "testcontainers";
-import { MicrocksContainer, TestRequest, TestRunnerType, OAuth2GrantType } from "./microcks-container";
+import { MicrocksContainer, TestRequest, TestRunnerType, OAuth2GrantType, StartedMicrocksContainer } from "./microcks-container";
 
 import KeycloakContainer from 'keycloak-testcontainer';
 
@@ -76,12 +76,18 @@ describe("MicrocksContainer", () => {
     expect(response.status).toBe(200);
     expect(responseJson.name).toBe("Millefeuille");
 
+    // Check it has been called once.
+    await testInvocationsCheckingFunctionality(container, "API Pastries", "0.0.1", 1);
+
     // Check that mock from secondary artifact has been loaded too.
     response = await fetch(pastriesUrl + "/pastries/Eclair Chocolat");
     responseJson = await response.json();
 
     expect(response.status).toBe(200);
     expect(responseJson.name).toBe("Eclair Chocolat");
+
+    // Check it has been called twice.
+    await testInvocationsCheckingFunctionality(container, "API Pastries", "0.0.1", 2);
 
     // Check that mock from from main/primary remote artifact has been loaded.
     pastriesUrl = container.getRestMockEndpoint("API Pastry - 2.0", "2.0.0");
@@ -92,11 +98,19 @@ describe("MicrocksContainer", () => {
     expect(response.status).toBe(200);
     expect(responseJson.name).toBe("Millefeuille");
 
+    // Check it has been called once.
+    await testInvocationsCheckingFunctionality(container, "API Pastry - 2.0", "2.0.0", 1);
+
     // Now stop the container.
     await container.stop();
   });
   // }
 
+  async function testInvocationsCheckingFunctionality(container: StartedMicrocksContainer, 
+      serviceName: string, serviceVersion: string, expectedCount: number) {
+    expect(await container.verify(serviceName, serviceVersion)).toBe(true);
+    expect(await container.getServiceInvocationsCount(serviceName, serviceVersion)).toBe(expectedCount)
+  }
 
   // start and contract test {
   it("should start, load artifacts and contract test mock", async () => {
