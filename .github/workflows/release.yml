@@ -54,7 +54,7 @@ jobs:
         run: |
           npm sbom --sbom-format spdx > microcks-microcks-testcontainers-${{ github.event.inputs.version }}.spdx-sbom.json 
           npm run build
-          #npm publish --provenance
+          npm publish --provenance
           npm pack
 
       - name: Publish release with JReleaser
