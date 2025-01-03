@@ -1,0 +1,26 @@
+project:
+  name: Microcks Testcontainers
+  description: Microcks Testcontainers Node/TS library
+  longDescription: Microcks Testcontainers Node/TypeScript library
+  copyright: The Microcks Authors
+
+signing:
+  active: ALWAYS
+  armored: true
+
+files:
+  active: ALWAYS
+  artifacts:
+    - path: 'microcks-microcks-testcontainers-{{projectVersion}}.spdx-sbom.json'
+    - path: 'microcks-microcks-testcontainers-{{projectVersion}}.tgz'
+
+release:
+  github:
+    overwrite: true
+    releaseName: '{{tagName}}'
+    tagName: '{{projectVersion}}'
+    changelog:
+      formatted: ALWAYS
+      preset: conventional-commits
+      contributors:
+        format: '- {{contributorName}}{{#contributorUsernameAsLink}} ({{.}}){{/contributorUsernameAsLink}}'
