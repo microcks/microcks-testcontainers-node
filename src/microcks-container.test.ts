@@ -61,6 +61,18 @@ describe("MicrocksContainer", () => {
     let baseGraphPath = container.getGraphQLMockEndpointPath("Pastries Graph", "1");
     expect("/graphql/Pastries Graph/1").toBe(baseGraphPath);
 
+    let validWsUrl = container.getValidatingSoapMockEndpoint("Pastries Service", "1.0");
+    expect(container.getHttpEndpoint() + "/soap/Pastries Service/1.0?validate=true").toBe(validWsUrl);
+
+    let validApiUrl = container.getValidatingRestMockEndpoint("API Pastries", "0.0.1");
+    expect(container.getHttpEndpoint() + "/rest-valid/API Pastries/0.0.1").toBe(validApiUrl);
+
+    let validWsPath = container.getValidatingSoapMockEndpointPath("Pastries Service", "1.0");
+    expect("/soap/Pastries Service/1.0?validate=true").toBe(validWsPath);
+
+    let validApiPath = container.getValidatingRestMockEndpointPath("API Pastries", "0.0.1");
+    expect("/rest-valid/API Pastries/0.0.1").toBe(validApiPath);
+
     // Check available services loaded including snapshot.
     var services = await fetch(container.getHttpEndpoint() + "/api/services");
     expect(services.status).toBe(200);

@@ -328,6 +328,26 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
   }
 
   /**
+   * Get the exposed mock endpoint - with request validation enabled - for a SOAP service.
+   * @param {String} service The name of Service/API
+   * @param {String} version The version of Service/API
+   * @returns A usable endpoint to interact with Microcks mocks
+   */
+  public getValidatingSoapMockEndpoint(service: string, version: string): string {
+    return `http://${this.getHost()}:${this.httpPort}/soap/${service}/${version}?validate=true`;
+  }
+
+  /**
+   * Get the exposed mock endpoint path - with request validation enabled - for a SOAP service.
+   * @param {String} service The name of Service/API
+   * @param {String} version The version of Service/API
+   * @returns A usable endpoint to interact with Microcks mocks - starts with '/'.
+   */
+  public getValidatingSoapMockEndpointPath(service: string, version: string): string {
+    return `/soap/${service}/${version}?validate=true`;
+  }
+
+  /**
    * Get the exposed mock endpoint for a REST API.
    * @param {String} service The name of Service/API
    * @param {String} version The version of Service/API
@@ -347,6 +367,26 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
     return `/rest/${service}/${version}`;
   }
 
+  /**
+   * Get the exposed mock endpoint - with request validation enabled - for a REST API.
+   * @param {String} service The name of Service/API
+   * @param {String} version The version of Service/API
+   * @returns A usable endpoint to interact with Microcks mocks
+   */
+  public getValidatingRestMockEndpoint(service: string, version: string): string {
+    return `http://${this.getHost()}:${this.httpPort}/rest-valid/${service}/${version}`;
+  }
+
+  /**
+   * Get the exposed mock endpoint path - with request validation enabled - for a REST API.
+   * @param {String} service The name of Service/API
+   * @param {String} version The version of Service/API
+   * @returns A usable endpoint to interact with Microcks mocks - starts with '/'.
+   */
+  public getValidatingRestMockEndpointPath(service: string, version: string): string {
+    return `/rest-valid/${service}/${version}`;
+  }
+  
   /**
    * Get the exposed mock endpoint for a GraphQL API.
    * @param {String} service The name of Service/API
