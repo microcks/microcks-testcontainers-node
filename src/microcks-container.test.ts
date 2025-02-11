@@ -52,6 +52,15 @@ describe("MicrocksContainer", () => {
     let baseGrpcUrl = container.getGrpcMockEndpoint();
     expect("grpc://" + container.getHost() + ":" + container.getMappedPort(9090)).toBe(baseGrpcUrl);
 
+    let baseWsPath = container.getSoapMockEndpointPath("Pastries Service", "1.0");
+    expect("/soap/Pastries Service/1.0").toBe(baseWsPath);
+
+    let baseApiPath = container.getRestMockEndpointPath("API Pastries", "0.0.1");
+    expect("/rest/API Pastries/0.0.1").toBe(baseApiPath);
+
+    let baseGraphPath = container.getGraphQLMockEndpointPath("Pastries Graph", "1");
+    expect("/graphql/Pastries Graph/1").toBe(baseGraphPath);
+
     // Check available services loaded including snapshot.
     var services = await fetch(container.getHttpEndpoint() + "/api/services");
     expect(services.status).toBe(200);

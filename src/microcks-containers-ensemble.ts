@@ -21,6 +21,10 @@ import {
 } from "./microcks-async-minion-container";
 
 export class MicrocksContainersEnsemble {
+  static readonly MICROCKS_CONTAINER_ALIAS = "microcks";
+  static readonly POSTMAN_CONTAINER_ALIAS = "postman";
+  static readonly MICROCKS_ASYNC_MINION_CONTAINER_ALIAS = "microcks-async-minion";
+
   private network: StartedNetwork;
   private microcksContainer: MicrocksContainer;
   private postmanContainer?: GenericContainer;
@@ -31,11 +35,13 @@ export class MicrocksContainersEnsemble {
 
     this.microcksContainer = new MicrocksContainer(image)
       .withNetwork(this.network)
-      .withNetworkAliases("microcks")
+      .withNetworkAliases(MicrocksContainersEnsemble.MICROCKS_CONTAINER_ALIAS)
       .withEnvironment({
-        POSTMAN_RUNNER_URL: "http://postman:3000",
-        TEST_CALLBACK_URL: "http://microcks:8080",
-        ASYNC_MINION_URL: "http://microcks-async-minion:" + MicrocksAsyncMinionContainer.MICROCKS_ASYNC_MINION_HTTP_PORT,
+        POSTMAN_RUNNER_URL: "http://" + MicrocksContainersEnsemble.POSTMAN_CONTAINER_ALIAS + ":3000",
+        TEST_CALLBACK_URL: "http://" + MicrocksContainersEnsemble.MICROCKS_CONTAINER_ALIAS 
+            + ":" + MicrocksContainer.MICROCKS_HTTP_PORT,
+        ASYNC_MINION_URL: "http://" + MicrocksContainersEnsemble.MICROCKS_ASYNC_MINION_CONTAINER_ALIAS 
+            + ":" + MicrocksAsyncMinionContainer.MICROCKS_ASYNC_MINION_HTTP_PORT,
       });
   }
 
@@ -47,7 +53,7 @@ export class MicrocksContainersEnsemble {
   public withPostman(image = "quay.io/microcks/microcks-postman-runtime:latest"): this {
     this.postmanContainer = new GenericContainer(image)
       .withNetwork(this.network)
-      .withNetworkAliases("postman")
+      .withNetworkAliases(MicrocksContainersEnsemble.POSTMAN_CONTAINER_ALIAS)
       .withWaitStrategy(Wait.forLogMessage(/.*postman-runtime wrapper listening on port.*/, 1));
     return this;
   }

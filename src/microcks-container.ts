@@ -318,6 +318,16 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
   }
 
   /**
+   * Get the exposed mock endpoint path for a SOAP service.
+   * @param {String} service The name of Service/API
+   * @param {String} version The version of Service/API
+   * @returns A usable endpoint to interact with Microcks mocks - starts with '/'.
+   */
+  public getSoapMockEndpointPath(service: string, version: string): string {
+    return `/soap/${service}/${version}`;
+  }
+
+  /**
    * Get the exposed mock endpoint for a REST API.
    * @param {String} service The name of Service/API
    * @param {String} version The version of Service/API
@@ -328,6 +338,16 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
   }
 
   /**
+   * Get the exposed mock endpoint path for a REST API.
+   * @param {String} service The name of Service/API
+   * @param {String} version The version of Service/API
+   * @returns A usable endpoint to interact with Microcks mocks - starts with '/'.
+   */
+  public getRestMockEndpointPath(service: string, version: string): string {
+    return `/rest/${service}/${version}`;
+  }
+
+  /**
    * Get the exposed mock endpoint for a GraphQL API.
    * @param {String} service The name of Service/API
    * @param {String} version The version of Service/API
@@ -335,6 +355,16 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
    */
   public getGraphQLMockEndpoint(service: string, version: string): string {
     return `http://${this.getHost()}:${this.httpPort}/graphql/${service}/${version}`;
+  }
+
+  /**
+   * Get the exposed mock endpoint path for a GraphQL API.
+   * @param {String} service The name of Service/API
+   * @param {String} version The version of Service/API
+   * @returns A usable endpoint to interact with Microcks mocks - starts with '/'.
+   */
+  public getGraphQLMockEndpointPath(service: string, version: string): string {
+    return `/graphql/${service}/${version}`;
   }
 
   /**
