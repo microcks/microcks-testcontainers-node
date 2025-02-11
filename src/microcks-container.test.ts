@@ -184,7 +184,7 @@ describe("MicrocksContainer", () => {
 
     // Start microcks container and other containers.
     const container = await new MicrocksContainer().withNetwork(network).start();
-    const keycloak = await new KeycloakContainer()
+    const keycloak = await new KeycloakContainer({ tag: '26.0' })
         .withNetwork(network)
         .withNetworkAliases("keycloak")
         .withRealmImport(path.resolve(resourcesDir, "realm"))
