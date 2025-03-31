@@ -196,7 +196,7 @@ describe("MicrocksContainersEnsemble", () => {
     expect(testResult.success).toBe(false);
     expect(testResult.testedEndpoint).toBe("ws://bad-impl:4001/websocket");
     expect(testResult.testCaseResults.length).toBeGreaterThan(0);
-    expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("object has missing required properties");
+    expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("required property 'status' not found");
 
     // Retrieve event messages for the failing test case.
     const events = await ensemble.getMicrocksContainer().getEventMessagesForTestCase(testResult, 
@@ -518,10 +518,10 @@ describe("MicrocksContainersEnsemble", () => {
     console.log("TestResult: " + JSON.stringify(testResult));
 
     expect(testResult.testCaseResults.length).toBeGreaterThan(0);
-    expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("object has missing required properties");
+    expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("required property 'status' not found");
     testResult.testCaseResults.forEach(tcr => {
       tcr.testStepResults.forEach(tsr => {
-        expect(tsr.message).toContain("object has missing required properties");
+        expect(tsr.message).toContain("required property 'status' not found");
       })
     });
 
