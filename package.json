@@ -1,6 +1,6 @@
 {
   "name": "@microcks/microcks-testcontainers",
-  "version": "0.3.1",
+  "version": "0.3.2-SNAPSHOT",
   "author": "Laurent Broudoux <laurent@microcks.io>",
   "description": "Node/TypeScript library for Testcontainers that enables embedding Microcks into your unit tests with lightweight, throwaway instance thanks to containers",
   "type": "module",
