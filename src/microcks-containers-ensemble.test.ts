@@ -22,8 +22,8 @@ import { CreateQueueCommand, ListQueuesCommand, ReceiveMessageCommand, SQSClient
 import { GenericContainer, Network, Wait } from "testcontainers";
 import { LocalstackContainer } from "@testcontainers/localstack";
 import { RabbitMQContainer } from "@testcontainers/rabbitmq";
-import { MicrocksContainersEnsemble } from "./microcks-containers-ensemble";
-import { TestRequest, TestResult, TestRunnerType } from "./microcks-container";
+import { MicrocksContainersEnsemble } from "./microcks-containers-ensemble.js";
+import { TestRequest, TestResult, TestRunnerType } from "./microcks-container.js";
 import { WebSocket } from "ws";
 import mqtt from "mqtt"; 
 import amqp from "amqplib";

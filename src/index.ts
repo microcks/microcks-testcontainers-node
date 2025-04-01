@@ -13,6 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./microcks-container";
-export * from "./microcks-containers-ensemble";
-export * from "./microcks-async-minion-container";
+export * from "./microcks-container.js";
+export * from "./microcks-containers-ensemble.js";
+export * from "./microcks-async-minion-container.js";
