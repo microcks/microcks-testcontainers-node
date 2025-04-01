@@ -15,7 +15,7 @@
  */
 
 import { AbstractStartedContainer, GenericContainer, StartedNetwork, StartedTestContainer, Wait, getContainerRuntimeClient } from "testcontainers";
-import { MicrocksContainer } from "./microcks-container";
+import { MicrocksContainer } from "./microcks-container.js";
 
 export class MicrocksAsyncMinionContainer extends GenericContainer {
   static readonly MICROCKS_ASYNC_MINION_HTTP_PORT = 8081;
