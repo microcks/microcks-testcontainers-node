@@ -2,11 +2,11 @@
   "compilerOptions": {
     "incremental": true,
     "target": "es2022",
-    "module": "commonjs",
+    "module": "nodenext",
     "declaration": true,
     "sourceMap": true,
     "strict": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

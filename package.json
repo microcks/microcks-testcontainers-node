@@ -13,7 +13,7 @@
     "url": "git+https://github.com/microcks/microcks-testcontainers-node.git"
   },
   "license": "Apache-2.0",
-  "main": "build/index.js",
+  "exports": "./build/index.js",
   "publishConfig": {
     "access": "public"
   },
@@ -23,7 +23,8 @@
     "test": "cross-env DEBUG=testcontainers* NODE_OPTIONS='--experimental-vm-modules' jest"
   },
   "dependencies": {
-    "testcontainers": "10.16.0"
+    "testcontainers": "10.16.0",
+    "ts-jest-resolver": "^2.0.1"
   },
   "devDependencies": {
     "@aws-sdk/client-sqs": "3.398.0",
@@ -46,6 +47,6 @@
     "build"
   ],
   "engines": {
-    "node": ">= 16"
+    "node": ">= 20"
   }
 }

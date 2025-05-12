@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 import { GenericContainer, StartedNetwork, StartedTestContainer, StopOptions, Wait } from "testcontainers";
-import { MicrocksContainer, Secret, StartedMicrocksContainer } from "./microcks-container";
-import { 
-  AmazonServiceConnection, GenericConnection, KafkaConnection, 
-  MicrocksAsyncMinionContainer, StartedMicrocksAsyncMinionContainer 
-} from "./microcks-async-minion-container";
+import { MicrocksContainer, Secret, StartedMicrocksContainer } from "./microcks-container.js";
+import {
+  AmazonServiceConnection, GenericConnection, KafkaConnection,
+  MicrocksAsyncMinionContainer, StartedMicrocksAsyncMinionContainer
+} from "./microcks-async-minion-container.js";
 
 export class MicrocksContainersEnsemble {
   static readonly MICROCKS_CONTAINER_ALIAS = "microcks";
