@@ -185,6 +185,21 @@ const testRequest: TestRequest = {
 }
 ```
 
+You may also reference secrets when downloading remote artifacts:
+
+```ts
+microcksContainer
+  .withMainRemoteArtifacts([
+    { url: "https://gitlab.com/user/private_repo/artifact1.yaml", secretName: "gl-secret" },
+    "https://github.com/user/public_repo/artifact2.yaml"
+  ])
+  .withSecondaryRemoteArtifacts([
+    { url: "https://gitlab.com/user/private_repo/examples1.yaml", secretName: "gl-secret" },
+    "https://github.com/user/public_repo/examples2.yaml"
+  ]);
+```
+
+
 ### Advanced features with MicrocksContainersEnsemble
 
 The `MicrocksContainer` referenced above supports essential features of Microcks provided by the main Microcks container. The list of supported features is the following:

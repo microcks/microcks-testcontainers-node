@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { GenericContainer, StartedNetwork, StartedTestContainer, StopOptions, Wait } from "testcontainers";
-import { MicrocksContainer, Secret, StartedMicrocksContainer } from "./microcks-container";
+import { MicrocksContainer, Secret, StartedMicrocksContainer, RemoteArtifact } from "./microcks-container";
 import { 
   AmazonServiceConnection, GenericConnection, KafkaConnection, 
   MicrocksAsyncMinionContainer, StartedMicrocksAsyncMinionContainer 
@@ -162,10 +162,10 @@ export class MicrocksContainersEnsemble {
   /**
    * Provide urls of remote artifacts that will be imported as primary or main ones within the Microcks container
    * once it will be started and healthy.
-   * @param {[String]} remoteArtifactUrls The urls or remote artifacts (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
+   * @param {[RemoteArtifact]} remoteArtifactUrls The urls or remote artifacts (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
    * @returns this
    */
-  public withMainRemoteArtifacts(remoteArtifactUrls: string[]): this {
+  public withMainRemoteArtifacts(remoteArtifactUrls: RemoteArtifact[]): this {
     this.microcksContainer.withMainRemoteArtifacts(remoteArtifactUrls);
     return this;
   }
@@ -173,10 +173,10 @@ export class MicrocksContainersEnsemble {
   /**
    * Provide urls of remote artifacts that will be imported as secondary ones within the Microcks container
    * once it will be started and healthy.
-   * @param {[String]} remoteArtifactUrls The furls or remote (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
+   * @param {[RemoteArtifact]} remoteArtifactUrls The furls or remote (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
    * @returns this
    */
-  public withSecondaryRemoteArtifacts(remoteArtifactUrls: string[]): this {
+  public withSecondaryRemoteArtifacts(remoteArtifactUrls: RemoteArtifact[]): this {
     this.microcksContainer.withSecondaryRemoteArtifacts(remoteArtifactUrls);
     return this;
   }
