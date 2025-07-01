@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@aws-sdk/client-sqs": "3.398.0",
-    "@testcontainers/localstack": "10.16.0",
+    "@testcontainers/localstack": "11.0.3",
     "@testcontainers/rabbitmq": "10.16.0",
     "@types/amqplib": "^0.10.5",
     "@types/jest": "^29.5.3",
