@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 import * as path from "path";
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
 
-import { jest } from '@jest/globals'
 import { GenericContainer, Network, Wait } from "testcontainers";
 import { MicrocksContainer, TestRequest, TestRunnerType, OAuth2GrantType, StartedMicrocksContainer } from "./microcks-container";
 
 import KeycloakContainer from 'keycloak-testcontainer';
 
 describe("MicrocksContainer", () => {
-  jest.setTimeout(180_000);
-
-  const __dirname = dirname(fileURLToPath(import.meta.url));
+  
   const resourcesDir = path.resolve(__dirname, "..", "test-resources");
 
   // start and mock {
