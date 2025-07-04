@@ -158,7 +158,8 @@ describe("MicrocksContainer", () => {
     expect(testResult.success).toBe(false);
     expect(testResult.testedEndpoint).toBe("http://bad-impl:3001");
     expect(testResult.testCaseResults.length).toBe(3);
-    expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("object has missing required properties");
+    expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("string found, number expected");
+    expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("required property 'status' not found");
 
     // Retrieve messages for the failing test case.
     const messages = await container.getMessagesForTestCase(testResult, "GET /pastries");
