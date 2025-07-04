@@ -3,6 +3,7 @@
   "exclude": [
     "build",
     "jest.config.ts",
+    "vite.config.ts",
     "src/**/*.test.ts"
   ]
 }

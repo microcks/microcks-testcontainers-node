@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { AbstractStartedContainer, GenericContainer, StartedNetwork, StartedTestContainer, Wait, getContainerRuntimeClient } from "testcontainers";
+import { AbstractStartedContainer, GenericContainer, StartedNetwork, StartedTestContainer, Wait } from "testcontainers";
 import { MicrocksContainer } from "./microcks-container";
 
 export class MicrocksAsyncMinionContainer extends GenericContainer {

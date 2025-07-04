@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 import * as path from "path";
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
 
-import { jest } from '@jest/globals'
 import { CreateQueueCommand, ListQueuesCommand, ReceiveMessageCommand, SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { GenericContainer, Network, Wait } from "testcontainers";
 import { LocalstackContainer } from "@testcontainers/localstack";
@@ -29,9 +26,7 @@ import mqtt from "mqtt";
 import amqp from "amqplib";
 
 describe("MicrocksContainersEnsemble", () => {
-  jest.setTimeout(180_000);
-
-  const __dirname = dirname(fileURLToPath(import.meta.url));
+  
   const resourcesDir = path.resolve(__dirname, "..", "test-resources");
 
   // start and mock {
