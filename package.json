@@ -22,12 +22,12 @@
     "test": "cross-env DEBUG=testcontainers* vitest run"
   },
   "dependencies": {
-    "testcontainers": "10.16.0"
+    "testcontainers": "10.19.0"
   },
   "devDependencies": {
     "@aws-sdk/client-sqs": "3.398.0",
-    "@testcontainers/localstack": "10.16.0",
-    "@testcontainers/rabbitmq": "10.16.0",
+    "@testcontainers/localstack": "10.19.0",
+    "@testcontainers/rabbitmq": "10.19.0",
     "@types/amqplib": "^0.10.5",
     "@types/jest": "^29.5.3",
     "@types/ws": "^8.5.10",
