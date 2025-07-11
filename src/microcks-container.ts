@@ -24,8 +24,8 @@ export class MicrocksContainer extends GenericContainer {
   private snapshots: string[] = [];
   private mainArtifacts: string[] = [];
   private secondaryArtifacts: string[] = [];
-  private mainRemoteArtifacts: string[] = [];
-  private secondaryRemoteArtifacts: string[] = [];
+  private mainRemoteArtifacts: RemoteArtifact[] = [];
+  private secondaryRemoteArtifacts: RemoteArtifact[] = [];
   private secrets: Secret[] = [];
 
   constructor(image = "quay.io/microcks/microcks-uber:1.12.0") {
@@ -59,10 +59,10 @@ export class MicrocksContainer extends GenericContainer {
   /**
    * Provide urls of remote artifacts that will be imported as primary or main ones within the Microcks container
    * once it will be started and healthy.
-   * @param {[String]} remoteArtifactUrls The urls or remote artifacts (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
+   * @param {[RemoteArtifact]} remoteArtifactUrls Array of URLs (strings) or objects with {url, secretName} (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
    * @returns this
    */
-  public withMainRemoteArtifacts(remoteArtifactUrls: string[]): this {
+  public withMainRemoteArtifacts(remoteArtifactUrls: RemoteArtifact[]): this {
     this.mainRemoteArtifacts = this.mainRemoteArtifacts.concat(remoteArtifactUrls);
     return this;
   }
@@ -70,10 +70,10 @@ export class MicrocksContainer extends GenericContainer {
   /**
    * Provide urls of remote artifacts that will be imported as secondary ones within the Microcks container
    * once it will be started and healthy.
-   * @param {[String]} remoteArtifactUrls The furls or remote (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
+   * @param {[RemoteArtifact]} remoteArtifactUrls Array of URLs (strings) or objects with {url, secretName} (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
    * @returns this
    */
-  public withSecondaryRemoteArtifacts(remoteArtifactUrls: string[]): this {
+  public withSecondaryRemoteArtifacts(remoteArtifactUrls: RemoteArtifact[]): this {
     this.secondaryRemoteArtifacts = this.secondaryRemoteArtifacts.concat(remoteArtifactUrls);
     return this;
   }
@@ -115,12 +115,14 @@ export class MicrocksContainer extends GenericContainer {
     }
     // Load remote artifacts before local ones.
     for (let i=0; i<this.mainRemoteArtifacts.length; i++) {
-      await startedContainer.downloadAsMainArtifact(this.mainRemoteArtifacts[i]);
+      const { url, secretName } = this.extractArtifactInfo(this.mainRemoteArtifacts[i]);
+      await startedContainer.downloadAsMainArtifact(url, secretName);
     }
     for (let i=0; i<this.secondaryRemoteArtifacts.length; i++) {
-      await startedContainer.downloadAsSecondaryArtifact(this.secondaryRemoteArtifacts[i]);
+      const { url, secretName } = this.extractArtifactInfo(this.secondaryRemoteArtifacts[i]);
+      await startedContainer.downloadAsSecondaryArtifact(url, secretName);
     }
-    // Import artifacts declared in configuration. 
+    // Import artifacts declared in configuration.
     for (let i=0; i<this.mainArtifacts.length; i++) {
       await startedContainer.importAsMainArtifact(this.mainArtifacts[i]);
     }
@@ -132,6 +134,12 @@ export class MicrocksContainer extends GenericContainer {
     }
 
     return startedContainer;
+  }
+
+  private extractArtifactInfo(artifact: RemoteArtifact): { url: string; secretName?: string } {
+    return typeof artifact === 'string'
+      ? { url: artifact }
+      : { url: artifact.url, secretName: artifact.secretName };
   }
 }
 
@@ -287,6 +295,11 @@ export interface DailyInvocationStatistic {
   minuteCount: {string: number};
 }
 
+export type RemoteArtifact = string | {
+  url: string;
+  secretName?: string;
+}
+
 
 export class StartedMicrocksContainer extends AbstractStartedContainer {
   private readonly httpPort: number;
@@ -439,8 +452,8 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
    * @param {String} remoteArtifactUrl The URL to remote artifact (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
    * @returns Success or error via Promise
    */
-  public async downloadAsMainArtifact(remoteArtifactUrl: string): Promise<void> {
-    return this.downloadArtifact(remoteArtifactUrl, true);
+  public async downloadAsMainArtifact(remoteArtifactUrl: string, secretName?: string): Promise<void> {
+    return this.downloadArtifact(remoteArtifactUrl, true, secretName);
   }
 
   /**
@@ -448,8 +461,8 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
    * @param {String} remoteArtifactUrl The URL to remote artifact (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)
    * @returns Success or error via Promise
    */
-  public async downloadAsSecondaryArtifact(remoteArtifactUrl: string): Promise<void> {
-    return this.downloadArtifact(remoteArtifactUrl, false);
+  public async downloadAsSecondaryArtifact(remoteArtifactUrl: string, secretName?: string): Promise<void> {
+    return this.downloadArtifact(remoteArtifactUrl, false, secretName);
   }
 
   /**
@@ -597,7 +610,6 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
     return invocationStats.dailyCount;
   }
 
-  
   private async importArtifact(artifactPath: string, mainArtifact: boolean): Promise<void> {
     const isFile = await this.isFile(artifactPath);
     if (!isFile) {
@@ -613,11 +625,14 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
     }
   }
 
-  private async downloadArtifact(remoteArtifactUrl: string, mainArtifact: boolean): Promise<void> {
+  private async downloadArtifact(remoteArtifactUrl: string, mainArtifact: boolean, secretName?: string): Promise<void> {
     let formBody = new URLSearchParams({
       "mainArtifact": String(mainArtifact),
       "url": remoteArtifactUrl
     });
+    if (secretName) {
+      formBody.append("secretName", secretName);
+    }
 
     // Prepare headers with content type and length.
     const headers: Record<string, string> = {
