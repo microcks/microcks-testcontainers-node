@@ -113,6 +113,10 @@ export class MicrocksContainer extends GenericContainer {
     for (let i=0; i<this.snapshots.length; i++) {
       await startedContainer.importSnapshot(this.snapshots[i]);
     }
+    // Load secrets before artifacts.
+    for (let i=0; i<this.secrets.length; i++) {
+      await startedContainer.createSecret(this.secrets[i]);
+    }
     // Load remote artifacts before local ones.
     for (let i=0; i<this.mainRemoteArtifacts.length; i++) {
       const { url, secretName } = this.extractArtifactInfo(this.mainRemoteArtifacts[i]);
@@ -128,9 +132,6 @@ export class MicrocksContainer extends GenericContainer {
     }
     for (let i=0; i<this.secondaryArtifacts.length; i++) {
       await startedContainer.importAsSecondaryArtifact(this.secondaryArtifacts[i]);
-    }
-    for (let i=0; i<this.secrets.length; i++) {
-      await startedContainer.createSecret(this.secrets[i]);
     }
 
     return startedContainer;
