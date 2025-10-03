@@ -22,19 +22,19 @@
     "test": "cross-env DEBUG=testcontainers* vitest run"
   },
   "dependencies": {
-    "testcontainers": "10.19.0"
+    "testcontainers": "11.7.1"
   },
   "devDependencies": {
     "@aws-sdk/client-sqs": "3.398.0",
     "@testcontainers/localstack": "11.7.1",
-    "@testcontainers/rabbitmq": "10.19.0",
+    "@testcontainers/rabbitmq": "11.7.1",
     "@types/amqplib": "^0.10.5",
     "@types/jest": "^29.5.3",
     "@types/ws": "^8.5.10",
-    "amqplib": "^0.10.4",
+    "amqplib": "^0.10.8",
     "cross-env": "^7.0.3",
-    "keycloak-testcontainer": "^0.0.9",
-    "mqtt": "^5.10.3",
+    "keycloak-testcontainer": "^0.1.0",
+    "mqtt": "^5.14.1",
     "ts-node": "^10.9.1",
     "typescript": "^4.9.5",
     "vitest": "3.2.4",
