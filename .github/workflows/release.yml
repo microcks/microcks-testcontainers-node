@@ -58,7 +58,7 @@ jobs:
           npm pack
 
       - name: Publish release with JReleaser
-        uses: jreleaser/release-action@ad73772277e63d9f2bbf4f24a7bb1300388334d7 # v 2.4.3
+        uses: jreleaser/release-action@90ac653bb9c79d11179e65d81499f3f34527dcd5 # v 2.5.0
         env:
           JRELEASER_PROJECT_VERSION: ${{ github.event.inputs.version }}
           JRELEASER_GPG_PASSPHRASE: ${{ secrets.JRELEASER_GPG_PASSPHRASE }}
