@@ -23,7 +23,7 @@ export class MicrocksAsyncMinionContainer extends GenericContainer {
   private network: StartedNetwork;
   private extraProtocols: string = "";
   
-  constructor(network: StartedNetwork, image = "quay.io/microcks/microcks-uber-async-minion:1.12.0") {
+  constructor(network: StartedNetwork, image = "quay.io/microcks/microcks-uber-async-minion:1.13.2") {
     super(image);
     this.network = network;
     this.withNetwork(this.network)
