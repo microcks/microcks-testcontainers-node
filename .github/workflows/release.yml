@@ -19,7 +19,8 @@ jobs:
       issues: write
       contents: write
       deployments: write
-      id-token: write
+      id-token: write # Required for OIDC and NPM Trusted Publisher support
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -49,8 +50,6 @@ jobs:
           git push origin ${{ github.event.inputs.version }}
 
       - name: Publish package with NPM
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm sbom --sbom-format spdx > microcks-microcks-testcontainers-${{ github.event.inputs.version }}.spdx-sbom.json 
           npm run build
