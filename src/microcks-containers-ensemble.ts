@@ -30,6 +30,8 @@ export class MicrocksContainersEnsemble {
   private postmanContainer?: GenericContainer;
   private asyncMinionContainer?: MicrocksAsyncMinionContainer;
 
+  private asyncMinionEnvironment: Record<string, string> = {};
+
   constructor(network: StartedNetwork, image = "quay.io/microcks/microcks-uber:1.13.2") {
     this.network = network;
 
@@ -43,6 +45,19 @@ export class MicrocksContainersEnsemble {
         ASYNC_MINION_URL: "http://" + MicrocksContainersEnsemble.MICROCKS_ASYNC_MINION_CONTAINER_ALIAS 
             + ":" + MicrocksAsyncMinionContainer.MICROCKS_ASYNC_MINION_HTTP_PORT,
       });
+  }
+
+  /**
+   * Enable debug log level on MicrocksContainersEnsemble containers.
+   * @returns this
+   */
+  public withDebugLogLevel(): this {
+    this.microcksContainer.withDebugLogLevel();
+    this.asyncMinionEnvironment = { 
+      'QUARKUS_LOG_CONSOLE_LEVEL': 'DEBUG',  
+      'QUARKUS_LOG_CATEGORY__IO_GITHUB_MICROCKS__LEVEL': 'DEBUG'
+    };
+    return this;
   }
 
   /**
@@ -192,9 +207,12 @@ export class MicrocksContainersEnsemble {
   }
 
   public async start(): Promise<StartedMicrocksContainersEnsemble> {
+    if (this.asyncMinionContainer) {
+      this.asyncMinionContainer.withEnvironment(this.asyncMinionEnvironment);
+    }
     return new StartedMicrocksContainersEnsemble(
       await this.microcksContainer.start(),
-      await this.postmanContainer?.start(),
+      await this.postmanContainer?.start(), 
       await this.asyncMinionContainer?.start()
     );
   }

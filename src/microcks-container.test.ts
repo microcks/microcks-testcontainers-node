@@ -26,14 +26,24 @@ describe("MicrocksContainer", () => {
 
   // start and mock {
   it("should start, load artifacts and expose mock", async () => {
+    var logs = "";
+
     // Start container and load artifacts.
     const container = await new MicrocksContainer()
+      .withDebugLogLevel()
+      .withLogConsumer(stream => {
+        stream.on("data", line => logs += line + "\n");
+        stream.on("end", () => console.log("Stream closed"));
+      })
       .withSnapshots([path.resolve(resourcesDir, "microcks-repository.json")])
       .withMainArtifacts([path.resolve(resourcesDir, "apipastries-openapi.yaml")])
       .withMainRemoteArtifacts(["https://raw.githubusercontent.com/microcks/microcks/master/samples/APIPastry-openapi.yaml"])
       .withSecondaryArtifacts([path.resolve(resourcesDir, "apipastries-postman-collection.json")])
       .start();
     
+    // Check that debug logs are present in container logs.
+    expect(logs).toContain("DEBUG 1");
+         
     // Test mock endpoints relative methods.
     let baseWsUrl = container.getSoapMockEndpoint("Pastries Service", "1.0");
     expect(container.getHttpEndpoint() + "/soap/Pastries Service/1.0").toBe(baseWsUrl);

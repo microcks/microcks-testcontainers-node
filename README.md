@@ -11,6 +11,23 @@ Want to see this extension in action? Check out our [sample application](https:/
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/microcks-uber-image&style=for-the-badge)](https://artifacthub.io/packages/search?repo=microcks-uber-image)
 [![CNCF Landscape](https://img.shields.io/badge/CNCF%20Landscape-5699C6?style=for-the-badge&logo=cncf)](https://landscape.cncf.io/?item=app-definition-and-development--application-definition-image-build--microcks)
 
+### Table of Contents
+[Build Status](#build-status)  
+[Community](#community)  
+[How to use it?](#how-to-use-it)  
+- [Include it into your project dependencies](#include-it-into-your-project-dependencies)
+- [Startup the container](#startup-the-container)
+- [Import content in Microcks](#import-content-in-microcks)
+- [Using mock endpoints for your dependencies](#using-mock-endpoints-for-your-dependencies)
+- [Verifying mock endpoint has been invoked](#verifying-mock-endpoint-has-been-invoked)
+- [Launching new contract-tests](#launching-new-contract-tests)
+- [Using authentication Secrets](#using-authentication-secrets)
+- [Advanced features with MicrocksContainersEnsemble](#advanced-features-with-microckscontainersensemble)
+  - [Postman contract-testing](#postman-contract-testing)
+  - [Asynchronous API support](#asynchronous-api-support)
+    - [Using mock endpoints for your dependencies](#using-mock-endpoints-for-your-dependencies-1)
+    - [Launching new contract-tests](#launching-new-contract-tests-1)
+
 ## Build Status
 
 Latest released version is `0.3.3`.
@@ -210,7 +227,7 @@ The `MicrocksContainer` referenced above supports essential features of Microcks
 * Mocking and contract-testing of GraphQL APIs,
 * Mocking and contract-testing of gRPC APIs.
 
-To support features like `POSTMAN` contract-testing, we introduced MicrocksContainersEnsemble that allows managing additional Microcks services. MicrocksContainersEnsemble allow you to implement [Different levels of API contract testing](https://medium.com/@lbroudoux/different-levels-of-api-contract-testing-with-microcks-ccc0847f8c97) in the Inner Loop with Testcontainers!
+To support features like Asynchronous API and `POSTMAN` contract-testing, we introduced `MicrocksContainersEnsemble` that allows managing additional Microcks services. MicrocksContainersEnsemble allow you to implement [Different levels of API contract testing](https://medium.com/@lbroudoux/different-levels-of-api-contract-testing-with-microcks-ccc0847f8c97) in the Inner Loop with Testcontainers!
 
 A `MicrocksContainersEnsemble` conforms to Testcontainers lifecycle methods and presents roughly the same interface as a `MicrocksContainer`. You can create and build an ensemble that way after having initialized a `Network`:
 
@@ -313,3 +330,20 @@ expect(testResult.success).toBe(true);
 ```
 
 In addition, you can use the `getEventMessagesForTestCase()` method to retrieve the events received during the test.
+
+### Troubleshooting
+
+You can enable debug logs on the Microcks container by setting the debug log level and then retrieving the logs:
+
+```java
+MicrocksContainer microcks = new MicrocksContainer("[...]"))
+    .withDebugLogLevel()
+    .withLogConsumer(stream => {
+        stream.on("data", line => console.log(line));
+        stream.on("end", () => console.log("Stream closed"));
+    })
+    .start();
+```
+
+The same `.withDebugLogLevel()` method is available on also `MicrocksContainersEnsemble` for enabling debug logs 
+on all contained Microcks containers.

@@ -35,6 +35,15 @@ export class MicrocksContainer extends GenericContainer {
   }
 
   /**
+   * Set the container logging level to DEBUG.
+   * @returns this
+   */ 
+  public withDebugLogLevel(): this {
+    this.withEnvironment({ 'LOGGING_LEVEL_IO_GITHUB_MICROCKS': 'DEBUG' });
+    return this;
+  }
+
+  /**
    * Provide paths to artifacts that will be imported as primary or main ones within the Microcks container
    * once it will be started and healthy.
    * @param {[String]} artifacts The file paths to artifacts (OpenAPI, Postman collection, Protobuf, GraphQL schema, ...)

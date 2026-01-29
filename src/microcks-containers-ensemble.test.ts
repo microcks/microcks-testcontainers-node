@@ -127,12 +127,21 @@ describe("MicrocksContainersEnsemble", () => {
   it("should start, load artifacts and mock async WebSocket", async () => {
     const network = await new Network().start();
 
+    var logs = "";
+
     // Start ensemble, load artifacts and start other containers.
     const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:nightly")
+      .withDebugLogLevel()
       .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
       .withAsyncFeature("quay.io/microcks/microcks-uber-async-minion:nightly")
       .start();
 
+    // Fecthing 2 seconds of Async Minion logs should be enough to get debug logs.
+    const since = (new Date().getTime() - (2 * 1000)) / 1000; // 2 seconds ago
+    (await ensemble.getAsyncMinionContainer()!.logs({since}))
+      .on("data", line => logs += line + "\n")
+      .on("end", () => console.log("Stream closed"));
+    
     // Initialize messages list and connect to mock endpoint.
     let messages: string[] = [];
     let wsEndpoint = ensemble.getAsyncMinionContainer()?.getWSMockEndpoint("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders");
@@ -147,6 +156,10 @@ describe("MicrocksContainersEnsemble", () => {
     // Wait 7 seconds for messages from Async Minion WebSocket to get at least 2 messages.
     await delay(7000);
 
+    // Check that debug logs are present in container logs.
+    expect(logs).toContain("DEBUG [");  
+
+    // Check received messages.
     expect(messages.length).toBeGreaterThan(0);
     messages.forEach(message => {
       expect(message).toBe(expectedMessage);
