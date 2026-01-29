@@ -13,18 +13,15 @@ on:
         required: true
 
 permissions:
+  issues: write
+  contents: write
+  deployments: write
   id-token: write   # Required for OIDC and NPM Trusted Publisher support
 
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      contents: write
-      deployments: write
-      id-token: write   # Required for OIDC and NPM Trusted Publisher support
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
