@@ -12,6 +12,7 @@ Want to see this extension in action? Check out our [sample application](https:/
 [![CNCF Landscape](https://img.shields.io/badge/CNCF%20Landscape-5699C6?style=for-the-badge&logo=cncf)](https://landscape.cncf.io/?item=app-definition-and-development--application-definition-image-build--microcks)
 
 ### Table of Contents
+
 [Build Status](#build-status)  
 [Community](#community)  
 [How to use it?](#how-to-use-it)  
@@ -27,6 +28,7 @@ Want to see this extension in action? Check out our [sample application](https:/
   - [Asynchronous API support](#asynchronous-api-support)
     - [Using mock endpoints for your dependencies](#using-mock-endpoints-for-your-dependencies-1)
     - [Launching new contract-tests](#launching-new-contract-tests-1)
+- [Troubleshooting](#troubleshooting)
 
 ## Build Status
 
@@ -333,8 +335,8 @@ In addition, you can use the `getEventMessagesForTestCase()` method to retrieve 
 
 You can enable debug logs on the Microcks container by setting the debug log level and then retrieving the logs:
 
-```java
-MicrocksContainer microcks = new MicrocksContainer("[...]"))
+```ts
+const container = await new MicrocksContainer()
     .withDebugLogLevel()
     .withLogConsumer(stream => {
         stream.on("data", line => console.log(line));
