@@ -376,7 +376,7 @@ describe("MicrocksContainersEnsemble", () => {
     })
     await client.send(createCommand);
 
-    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:1.11.0-native")
+    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:1.13.2-native")
       .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
       .withAsyncFeature()
       .withAmazonSQSConnection({
