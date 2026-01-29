@@ -65,8 +65,6 @@ npm install @microcks/microcks-testcontainers
 
 You just have to specify the container image you'd like to use. This library requires a Microcks `uber` distribution (with no MongoDB dependency).
 
-Version `0.2.5` and above use version `1.10.0` of Microcks container images.
-
 ```ts
 import { MicrocksContainer } from "@microcks/microcks-testcontainers";
 
