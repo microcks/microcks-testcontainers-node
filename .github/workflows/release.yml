@@ -11,6 +11,10 @@ on:
       nextVersion:
         description: 'Next version after release (-SNAPSHOT will be added automatically)'
         required: true
+
+permissions:
+  id-token: write   # Required for OIDC and NPM Trusted Publisher support
+
 jobs:
   release:
     name: Release
@@ -19,7 +23,7 @@ jobs:
       issues: write
       contents: write
       deployments: write
-      id-token: write # Required for OIDC and NPM Trusted Publisher support
+      id-token: write   # Required for OIDC and NPM Trusted Publisher support
 
     steps:
       - name: Checkout Code
