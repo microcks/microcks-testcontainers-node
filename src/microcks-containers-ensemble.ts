@@ -16,7 +16,7 @@
 import { GenericContainer, StartedNetwork, StartedTestContainer, StopOptions, Wait } from "testcontainers";
 import { MicrocksContainer, Secret, StartedMicrocksContainer, RemoteArtifact } from "./microcks-container.js";
 import { 
-  AmazonServiceConnection, GenericConnection, KafkaConnection, 
+  AmazonServiceConnection, GenericConnection, GooglePubSubConnection, KafkaConnection, 
   MicrocksAsyncMinionContainer, StartedMicrocksAsyncMinionContainer 
 } from "./microcks-async-minion-container.js";
 
@@ -149,6 +149,19 @@ export class MicrocksContainersEnsemble {
       throw new Error('Async feature must have been enabled first');
     }
     this.asyncMinionContainer?.withAmazonSNSConnection(connection);
+    return this;
+  }
+
+  /**
+   * Once the Async Feature is enabled, connects to a Google Pub/Sub service.
+   * @param {GooglePubSubConnection} connection Connection details to a Google Pub/Sub service.
+   * @returns this
+   */
+  public withGooglePubSubConnection(connection: GooglePubSubConnection): this {
+    if (this.asyncMinionContainer == undefined) {
+      throw new Error('Async feature must have been enabled first');
+    }
+    this.asyncMinionContainer?.withGooglePubSubConnection(connection);
     return this;
   }
 

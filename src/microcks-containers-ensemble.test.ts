@@ -16,7 +16,9 @@
 import * as path from "path";
 
 import { CreateQueueCommand, ListQueuesCommand, ReceiveMessageCommand, SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { PubSub } from "@google-cloud/pubsub";
 import { GenericContainer, Network, Wait } from "testcontainers";
+import { PubSubEmulatorContainer } from "@testcontainers/gcloud";
 import { LocalstackContainer } from "@testcontainers/localstack";
 import { RabbitMQContainer } from "@testcontainers/rabbitmq";
 import { MicrocksContainersEnsemble } from "./microcks-containers-ensemble";
@@ -560,6 +562,154 @@ describe("MicrocksContainersEnsemble", () => {
     // Now stop the ensemble, the containers and the network.
     await ensemble.stop();
     await localstack.stop();
+    await network.stop();
+  });
+  // }
+
+  // start and mock async Google PubSub {
+  it("should start, load artifacts and mock async Google PubSub", async () => {
+    const network = await new Network().start();
+
+    // Start Google PubSub emulator
+    const emulator = await new PubSubEmulatorContainer("gcr.io/google.com/cloudsdktool/google-cloud-cli:549.0.0-emulators")
+      .withNetwork(network)
+      .withNetworkAliases("pubsub-emulator")
+      .start();
+
+    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:1.13.2-native")
+      .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
+      .withAsyncFeature()
+      .withGooglePubSubConnection({
+        projectId: "my-custom-project",
+        emulatorHost: 'pubsub-emulator:8085'
+      })
+      .start();
+          
+    // Initialize messages list and connect to mock endpoint.
+    let messages: string[] = [];
+    let topicName = ensemble.getAsyncMinionContainer()?.getGooglePubSubMockTopic("Pastry orders API", "0.1.0", "SUBSCRIBE pastry/orders");
+    let expectedMessage = "{\"id\":\"4dab240d-7847-4e25-8ef3-1530687650c8\",\"customerId\":\"fe1088b3-9f30-4dc1-a93d-7b74f0a072b9\",\"status\":\"VALIDATED\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}";
+
+    // Wait a moment to be sure that minion has created the PubSub topic
+    await delay(2500);
+
+    // Create PubSub client and subscription
+    const pubsub = new PubSub({
+      projectId: "my-custom-project",
+      apiEndpoint: emulator.getEmulatorEndpoint()
+    });
+
+    const subscriptionName = 'my-subscription-id';
+    const [subscription] = await pubsub.topic(topicName!).createSubscription(subscriptionName);
+    
+    // Listen for messages
+    const messageHandler = (message: any) => {
+      messages.push(message.data.toString());
+      message.ack();
+    };
+
+    subscription.on('message', messageHandler);
+
+    // Wait for messages
+    await delay(5000);
+
+    subscription.removeListener('message', messageHandler);
+    await subscription.close();
+
+    expect(messages.length).toBeGreaterThan(0);
+    messages.forEach(message => {
+      expect(message).toBe(expectedMessage);
+    });
+
+    // Now stop the ensemble, the containers and the network.
+    await ensemble.stop();
+    await emulator.stop();
+    await network.stop();
+  });
+  // }
+
+  // start and contract test async Google PubSub {
+  it("should start, load artifacts and contract test mock async Google PubSub", async () => {
+    const network = await new Network().start();
+
+    // Start Google PubSub emulator
+    const emulator = await new PubSubEmulatorContainer("gcr.io/google.com/cloudsdktool/google-cloud-cli:549.0.0-emulators")
+      .withNetwork(network)
+      .withNetworkAliases("pubsub-emulator")
+      .start();
+
+    const ensemble = await new MicrocksContainersEnsemble(network, "quay.io/microcks/microcks-uber:1.13.2-native")
+      .withMainArtifacts([path.resolve(resourcesDir, "pastry-orders-asyncapi.yml")])
+      .withAsyncFeature()
+      .start();
+
+    // Create PubSub client and topic
+    const pubsub = new PubSub({
+      projectId: "my-custom-project",
+      apiEndpoint: emulator.getEmulatorEndpoint()
+    });
+
+    const topicName = 'pastry-orders';
+    const [topic] = await pubsub.createTopic(topicName);
+
+    // Initialize messages, start the test and publish messages.
+    const badMessage = "{\"id\":\"abcd\",\"customerId\":\"efgh\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}";
+    const goodMessage = "{\"id\":\"abcd\",\"customerId\":\"efgh\",\"status\":\"CREATED\",\"productQuantities\":[{\"quantity\":2,\"pastryName\":\"Croissant\"},{\"quantity\":1,\"pastryName\":\"Millefeuille\"}]}";
+
+    var testRequest: TestRequest = {
+      serviceId: "Pastry orders API:0.1.0",
+      runnerType: TestRunnerType.ASYNC_API_SCHEMA,
+      testEndpoint: `googlepubsub://my-custom-project/pastry-orders?emulatorHost=pubsub-emulator:8085`,
+      timeout: 5000
+    }
+
+    // First test should fail with validation failure messages.
+    let testResultPromise: Promise<TestResult> = ensemble.getMicrocksContainer().testEndpoint(testRequest);
+
+    for (var i=0; i<5; i++) {
+      await topic.publishMessage({ data: Buffer.from(badMessage) });
+      console.log('Sending bad message ' + i + ' on Google PubSub topic');
+      await delay(500);
+    }
+
+    let testResult = await testResultPromise;
+
+    expect(testResult.success).toBe(false);
+    expect(testResult.testedEndpoint).toBe(`googlepubsub://my-custom-project/pastry-orders?emulatorHost=pubsub-emulator:8085`);
+
+    console.log("TestResult: " + JSON.stringify(testResult));
+
+    expect(testResult.testCaseResults.length).toBeGreaterThan(0);
+    expect(testResult.testCaseResults[0].testStepResults[0].message).toContain("required property 'status' not found");
+    testResult.testCaseResults.forEach(tcr => {
+      tcr.testStepResults.forEach(tsr => {
+        expect(tsr.message).toContain("required property 'status' not found");
+      })
+    });
+
+    // Second test should be OK with no validation failure messages.
+    let testResultPromise2: Promise<TestResult> = ensemble.getMicrocksContainer().testEndpoint(testRequest);
+
+    for (var i=0; i<5; i++) {
+      await topic.publishMessage({ data: Buffer.from(goodMessage) });
+      console.log('Sending good message ' + i + ' on Google PubSub topic');
+      await delay(500);
+    }
+
+    let testResult2 = await testResultPromise2;
+
+    expect(testResult2.success).toBe(true);
+    expect(testResult2.testedEndpoint).toBe(`googlepubsub://my-custom-project/pastry-orders?emulatorHost=pubsub-emulator:8085`);
+    expect(testResult2.testCaseResults.length).toBeGreaterThan(0);
+    testResult2.testCaseResults.forEach(tcr => {
+      tcr.testStepResults.forEach(tsr => {
+        expect(tsr.message).toBeUndefined();
+      })
+    });
+
+    // Now stop the ensemble, the containers and the network.
+    await ensemble.stop();
+    await emulator.stop();
     await network.stop();
   });
   // }

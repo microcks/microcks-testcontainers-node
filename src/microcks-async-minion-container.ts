@@ -123,6 +123,25 @@ export class MicrocksAsyncMinionContainer extends GenericContainer {
     return this;
   }
 
+  /**
+   * Connect the MicrocksAsyncMinionContainer to a Google Pub/Sub service to allow Google Pub/Sub messages mocking.
+   * @param {GooglePubSubConnection} connection Connection details to a Google Pub/Sub service.
+   * @returns this
+   */
+  public withGooglePubSubConnection(connection: GooglePubSubConnection): this {
+    this.addProtocolIfNeeded('GOOGLEPUBSUB');
+    this.withEnvironment({
+      ASYNC_PROTOCOLS: this.extraProtocols,
+      GOOGLEPUBSUB_PROJECT: connection.projectId
+    });
+    if (connection.emulatorHost != undefined) {
+      this.withEnvironment({
+        PUBSUB_EMULATOR_HOST: connection.emulatorHost
+      });
+    }
+    return this;
+  }
+
   public override async start(): Promise<StartedMicrocksAsyncMinionContainer> {
     return new StartedMicrocksAsyncMinionContainer(await super.start());
   }
@@ -226,6 +245,21 @@ export class StartedMicrocksAsyncMinionContainer extends AbstractStartedContaine
     return this.getAmazonServiceMockDestination(service, version, operationName);
   }
 
+  /**
+   * Get the exposed mock topic for a Google Pub/Sub Service.
+   * @param {String} service The name of Service/API
+   * @param {String} version The version of Service/API
+   * @param {String} operationName The name of operation to get the topic for
+   * @returns A usable topic to interact with Microcks mocks.
+   */
+  public getGooglePubSubMockTopic(service: string, version: string, operationName: string): string {
+    // operationName may start with SUBSCRIBE or PUBLISH.
+    if (operationName.indexOf(' ') != -1) {
+      operationName = operationName.split(' ')[1];
+    }
+    return `${service.replace(/\s/g, '').replace(/-/g, '')}-${version.replace(/\s/g, '')}-${operationName.replace(/\//g, '-')}`;
+  }
+
   private getAmazonServiceMockDestination(service: string, version: string, operationName: string): string {
     // operationName may start with SUBSCRIBE or PUBLISH.
     if (operationName.indexOf(' ') != -1) {
@@ -251,4 +285,9 @@ export interface AmazonServiceConnection {
   endpointOverride?: string;
   accessKey: string;
   secretKey: string;
+}
+
+export interface GooglePubSubConnection {
+  projectId: string;
+  emulatorHost?: string;
 }
