@@ -29,7 +29,7 @@
     "@google-cloud/pubsub": "^4.0.0",
     "@testcontainers/gcloud": "11.7.2",
     "@testcontainers/localstack": "11.7.2",
-    "@testcontainers/rabbitmq": "11.7.2",
+    "@testcontainers/rabbitmq": "11.11.0",
     "@types/amqplib": "^0.10.5",
     "@types/jest": "^29.5.3",
     "@types/ws": "^8.5.10",
