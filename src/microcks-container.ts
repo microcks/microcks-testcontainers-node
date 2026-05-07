@@ -505,7 +505,7 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
     });
 
     if (response.status != 201) {
-      throw new Error("Secret has not been correctly created: " + await response.json());
+      throw new Error("Secret has not been correctly created: " + await response.text());
     }
   }
 
@@ -536,7 +536,7 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
       }
       return testResult;
     }
-    throw new Error("Couldn't launch on new test on Microcks. Please check Microcks container logs.");
+    throw new Error("Couldn't launch a new test on Microcks. Please check Microcks container logs.");
   }
 
   /**
@@ -561,7 +561,7 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
       const responseJson = await response.json();
       return responseJson as RequestResponsePair[];
     }
-    throw new Error("Couldn't retrieve messages on test on Microcks. Please check Microcks container logs");
+    throw new Error("Couldn't retrieve messages for test on Microcks. Please check Microcks container logs");
   }
 
   /**
@@ -586,7 +586,7 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
       const responseJson = await response.json();
       return responseJson as UnidirectionalEvent[];
     }
-    throw new Error("Couldn't retrieve event messages on test on Microcks. Please check Microcks container logs");
+    throw new Error("Couldn't retrieve event messages for test on Microcks. Please check Microcks container logs");
   }
 
   /**
@@ -623,7 +623,7 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
   private async importArtifact(artifactPath: string, mainArtifact: boolean): Promise<void> {
     const isFile = await this.isFile(artifactPath);
     if (!isFile) {
-      throw new Error(`Artifact ${artifactPath}  does not exist or can't be read`);
+      throw new Error(`Artifact ${artifactPath} does not exist or can't be read`);
     }
 
     // Actually upload the file to upload endpoint.
@@ -631,7 +631,7 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
     const response = await this.uploadFileToMicrocks(uploadURI, artifactPath, "application/octet-stream");
 
     if (response.status != 201) {
-      throw new Error("Artifact has not been correctly been imported: " + await response.json());
+      throw new Error("Artifact has not been correctly imported: " + await response.text());
     }
   }
 
@@ -657,21 +657,21 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
     })
 
     if (response.status != 201) {
-      throw new Error("Artifact has not been correctly downloaded: " + await response.json());
+      throw new Error("Artifact has not been correctly downloaded: " + await response.text());
     }
   }
 
   private async importSnapshotInternal(snapshotPath: string): Promise<void> {
     const isFile = await this.isFile(snapshotPath);
     if (!isFile) {
-      throw new Error(`Snapshot ${snapshotPath}  does not exist or can't be read`);
+      throw new Error(`Snapshot ${snapshotPath} does not exist or can't be read`);
     }
 
     // Actually upload the file to upload endpoint.
     const response = await this.uploadFileToMicrocks(this.getHttpEndpoint() + "/api/import", snapshotPath, "application/json");
 
     if (response.status != 201) {
-      throw new Error("Snapshot has not been correctly been imported: " + await response.json());
+      throw new Error("Snapshot has not been correctly imported: " + await response.text());
     }
   }
 
@@ -762,8 +762,8 @@ export class StartedMicrocksContainer extends AbstractStartedContainer {
   }
 
   private formatDate(invocationDate: Date): string {
-    const month = invocationDate.getMonth() < 10 ? `0${invocationDate.getMonth()}` : `${invocationDate.getMonth()}`
-    const day = invocationDate.getDate() < 10 ? `0${invocationDate.getDate()}` : `${invocationDate.getDate()}`;
+    const month = (invocationDate.getMonth() + 1).toString().padStart(2, "0");
+    const day = invocationDate.getDate().toString().padStart(2, "0");
     return `${invocationDate.getFullYear()}${month}${day}`;
   }
 }

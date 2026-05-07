@@ -135,7 +135,9 @@ describe("MicrocksContainer", () => {
   async function testInvocationsCheckingFunctionality(container: StartedMicrocksContainer, 
       serviceName: string, serviceVersion: string, expectedCount: number) {
     expect(await container.verify(serviceName, serviceVersion)).toBe(true);
-    expect(await container.getServiceInvocationsCount(serviceName, serviceVersion)).toBe(expectedCount)
+    expect(await container.getServiceInvocationsCount(serviceName, serviceVersion)).toBe(expectedCount);
+    expect(await container.verify(serviceName, serviceVersion, new Date())).toBe(true);
+    expect(await container.getServiceInvocationsCount(serviceName, serviceVersion, new Date())).toBe(expectedCount);
   }
 
   // start and contract test {
