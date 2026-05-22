@@ -32,7 +32,7 @@ export class MicrocksContainersEnsemble {
 
   private asyncMinionEnvironment: Record<string, string> = {};
 
-  constructor(network: StartedNetwork, image = "quay.io/microcks/microcks-uber:1.13.2") {
+  constructor(network: StartedNetwork, image = "quay.io/microcks/microcks-uber:1.14.0") {
     this.network = network;
 
     this.microcksContainer = new MicrocksContainer(image)
