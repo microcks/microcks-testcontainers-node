@@ -32,9 +32,9 @@ Want to see this extension in action? Check out our [sample application](https:/
 
 ## Build Status
 
-Latest released version is `0.3.4`.
+Latest released version is `0.3.5`.
 
-Current development version is `0.3.5-SNAPSHOT`.
+Current development version is `0.3.6-SNAPSHOT`.
 
 #### Fossa license and security scans
 
