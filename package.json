@@ -28,7 +28,7 @@
     "@aws-sdk/client-sqs": "3.398.0",
     "@google-cloud/pubsub": "^4.0.0",
     "@testcontainers/gcloud": "11.7.2",
-    "@testcontainers/localstack": "11.7.2",
+    "@testcontainers/localstack": "12.1.0",
     "@testcontainers/rabbitmq": "11.7.2",
     "@types/amqplib": "^0.10.5",
     "@types/jest": "^29.5.3",
